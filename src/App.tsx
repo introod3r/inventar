@@ -37,6 +37,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 const LayoutWrapper = () => (
   <AppShell>
@@ -49,7 +50,8 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
           <TooltipProvider delayDuration={150}>
@@ -101,6 +103,7 @@ function App() {
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
+  </ErrorBoundary>
   );
 }
 
