@@ -1,4 +1,3 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { supabase } from "@/integrations/supabase/client";
 
 export type ReversData = {
@@ -36,6 +35,7 @@ const sanitize = (s: string) => s.replace(/[ČčĆćĐđŠšŽž—–„“”�
 const fmt = (iso?: string | null) => iso ? sanitize(new Date(iso).toLocaleString("sr-RS")) : "-";
 
 export async function generateReversPdf(d: ReversData): Promise<Blob> {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]); // A4
   const font = await pdf.embedFont(StandardFonts.Helvetica);
