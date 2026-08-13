@@ -32,10 +32,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Database } from "@/integrations/supabase/types";
-import { printQrSheet } from "@/lib/qr-print";
+import { type QrItem } from "@/lib/qr-print";
 import { exportCsv } from "@/lib/csv";
 import { toast } from "sonner";
 import { ImportAssetsDialog } from "@/components/assets/ImportAssetsDialog";
+import { PrintQrDialog } from "@/components/assets/PrintQrDialog";
 
 type AssetStatus = Database["public"]["Enums"]["asset_status"];
 const STATUSES: AssetStatus[] = [
@@ -122,6 +123,11 @@ export default function AssetsList() {
   const [importOpen, setImportOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDesc, setSortDesc] = useState(false);
+
+  // QR Print Dialog State
+  const [qrPrintOpen, setQrPrintOpen] = useState(false);
+  const [qrPrintItems, setQrPrintItems] = useState<QrItem[]>([]);
+  const [qrDialogTitle, setQrDialogTitle] = useState<string>("");
 
   const qc = useQueryClient();
 
@@ -257,7 +263,7 @@ export default function AssetsList() {
   };
   const clearSelection = () => setSelected(new Set());
 
-  const onPrintSelected = async () => {
+  const onPrintSelected = () => {
     const items = (assets ?? [])
       .filter((a) => selected.has(a.id))
       .map((a) => ({ code: a.code, name: a.name, serial: a.serial_number }));
@@ -265,7 +271,9 @@ export default function AssetsList() {
       toast.error("Nema selektovanih stavki");
       return;
     }
-    await printQrSheet(items);
+    setQrPrintItems(items);
+    setQrDialogTitle(`Štampa QR Nalepnica (${items.length} izabranih)`);
+    setQrPrintOpen(true);
   };
 
   const onPrintAll = async () => {
@@ -291,16 +299,12 @@ export default function AssetsList() {
       toast.error("Nema opreme za štampu");
       return;
     }
-    if (rows.length > 200) {
-      const ok = window.confirm(
-        `Pripremam ${rows.length} QR nalepnica. Nastaviti?`,
-      );
-      if (!ok) return;
-    }
-    await printQrSheet(
+    
+    setQrPrintItems(
       rows.map((a) => ({ code: a.code, name: a.name, serial: a.serial_number })),
     );
-    toast.success(`Pripremljeno ${rows.length} QR nalepnica`);
+    setQrDialogTitle(`Štampa QR Nalepnica (${rows.length} komada)`);
+    setQrPrintOpen(true);
   };
 
   const onExportCsv = () => {
@@ -331,7 +335,7 @@ export default function AssetsList() {
         description="Sva osnovna sredstva i event oprema"
         actions={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={onPrintAll}>
+            <Button variant="outline" onClick={onPrintAll} className="border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10">
               <Printer className="mr-2 h-4 w-4" /> Štampaj sve QR
             </Button>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
@@ -447,9 +451,9 @@ export default function AssetsList() {
               size="sm"
               variant="outline"
               onClick={onPrintSelected}
-              className="h-8.5 text-xs rounded-lg"
+              className="h-8.5 text-xs rounded-lg border-cyan-500/40 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20"
             >
-              <Printer className="mr-2 h-3.5 w-3.5" /> QR nalepnice
+              <Printer className="mr-2 h-3.5 w-3.5" /> QR nalepnice ({selected.size})
             </Button>
             <Button
               size="sm"
@@ -770,6 +774,13 @@ export default function AssetsList() {
         open={importOpen}
         onOpenChange={setImportOpen}
         onImported={() => qc.invalidateQueries({ queryKey: ["assets"] })}
+      />
+
+      <PrintQrDialog
+        open={qrPrintOpen}
+        onOpenChange={setQrPrintOpen}
+        items={qrPrintItems}
+        title={qrDialogTitle}
       />
     </PageContainer>
   );

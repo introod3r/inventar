@@ -27,7 +27,10 @@ export default function AssetEdit() {
 
   const { data: asset, isLoading } = useQuery({
     queryKey: ["asset-edit", assetId],
-    queryFn: async () => (await supabase.from("assets").select("*").eq("id", assetId).maybeSingle()).data,
+    queryFn: async () => {
+      if (!assetId) return null;
+      return (await supabase.from("assets").select("*").eq("id", assetId).maybeSingle()).data;
+    },
   });
   const { data: locations } = useQuery({
     queryKey: ["locations-flat"],
@@ -84,7 +87,7 @@ export default function AssetEdit() {
         current_location_id: form.current_location_id || null,
         quantity: Number(form.quantity) || 1,
         unit: form.unit || "kom",
-      }).eq("id", assetId);
+      }).eq("id", assetId!);
       if (error) throw error;
       toast.success("Izmene sačuvane");
       navigate(`/assets/${assetId}`);

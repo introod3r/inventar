@@ -186,13 +186,17 @@ export function ReturnWizard({ open, onOpenChange }: Props) {
               : "available";
         if (c.asset_id) {
           await supabase.from("assets").update({ status: newStatus }).eq("id", c.asset_id);
+          if (c.event_id) {
+            const eaStatus = st.condition === "missing" ? "missing" : "returned";
+            await supabase.from("event_assets").update({ status: eaStatus }).eq("event_id", c.event_id).eq("asset_id", c.asset_id);
+          }
         }
 
         if (c.assets) {
           try {
             const pdf = await generateReversPdf({
               checkoutId: c.id,
-              asset: c.assets,
+              assets: [c.assets],
               event: c.events,
               checkedOutToName: c.checked_out_to_name,
               checkedOutAt: c.checked_out_at,
@@ -326,7 +330,7 @@ export function ReturnWizard({ open, onOpenChange }: Props) {
                           updateState(c.id, { condition: v as ItemState["condition"] })
                         }
                       >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-35">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

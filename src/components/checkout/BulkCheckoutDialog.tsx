@@ -77,6 +77,9 @@ export function BulkCheckoutDialog({ open, onOpenChange, items, onRemoveItem, on
         const path = await uploadSignature(blob, ck.id);
         await supabase.from("checkouts").update({ signature_path: path }).eq("id", ck.id);
         await supabase.from("assets").update({ status: newStatus }).eq("id", it.id);
+        if (eventId !== "none") {
+          await supabase.from("event_assets").update({ status: "picked" }).eq("event_id", eventId).eq("asset_id", it.id);
+        }
         created.push({ id: ck.id, signaturePath: path, asset: it });
       }
       return created;
@@ -85,12 +88,14 @@ export function BulkCheckoutDialog({ open, onOpenChange, items, onRemoveItem, on
       toast.success(`Zaduženo ${created.length} stavki`);
       qc.invalidateQueries({ queryKey: ["checkouts"] });
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event-assets"] });
       const ev = events?.find((e) => e.id === eventId) ?? null;
       for (const c of created) {
         try {
           const pdf = await generateReversPdf({
             checkoutId: c.id,
-            asset: c.asset,
+            assets: [c.asset],
             event: ev ? { name: ev.name } : null,
             checkedOutToName: recipient,
             checkedOutAt: new Date().toISOString(),

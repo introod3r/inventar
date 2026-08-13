@@ -69,6 +69,9 @@ export function CheckoutDialog({ open, onOpenChange, asset, onDone }: Props) {
 
       // status update
       await supabase.from("assets").update({ status: eventId !== "none" ? "at_event" : "in_transit" }).eq("id", asset.id);
+      if (eventId !== "none") {
+        await supabase.from("event_assets").update({ status: "picked" }).eq("event_id", eventId).eq("asset_id", asset.id);
+      }
 
       return { id: created.id, signaturePath: path };
     },
@@ -77,6 +80,8 @@ export function CheckoutDialog({ open, onOpenChange, asset, onDone }: Props) {
       qc.invalidateQueries({ queryKey: ["checkouts"] });
       qc.invalidateQueries({ queryKey: ["asset", asset.id] });
       qc.invalidateQueries({ queryKey: ["asset-history", asset.id] });
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event-assets"] });
       onDone?.();
       // generate PDF
       try {
@@ -184,12 +189,18 @@ export function ReturnDialog({ open, onOpenChange, checkout, asset }: ReturnProp
       }).eq("id", checkout.id);
       if (error) throw error;
       await supabase.from("assets").update({ status: damaged ? "damaged" : "available" }).eq("id", asset.id);
+      if (checkout.event_id) {
+        await supabase.from("event_assets").update({ status: damaged ? "missing" : "returned" }).eq("event_id", checkout.event_id).eq("asset_id", asset.id);
+      }
       return { signaturePath: path };
     },
     onSuccess: async (res) => {
       toast.success("Razduženje sačuvano");
       qc.invalidateQueries({ queryKey: ["checkouts"] });
       qc.invalidateQueries({ queryKey: ["asset", asset.id] });
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event-assets"] });
       try {
         const pdf = await generateReversPdf({
           checkoutId: checkout.id,

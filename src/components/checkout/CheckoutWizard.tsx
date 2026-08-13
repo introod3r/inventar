@@ -331,11 +331,18 @@ export function CheckoutWizard({ open, onOpenChange, prefillEventId, prefillAsse
           .single();
         if (error) throw error;
         created.push({ id: data.id, asset: a });
-        
         await supabase
           .from("assets")
           .update({ status: finalEventId ? "at_event" : "in_transit" })
           .eq("id", a.id);
+
+        if (finalEventId) {
+          await supabase
+            .from("event_assets")
+            .update({ status: "picked" })
+            .eq("event_id", finalEventId)
+            .eq("asset_id", a.id);
+        }
       }
 
       try {

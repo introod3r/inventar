@@ -33,8 +33,10 @@ const eventStatusMap: Record<string, string> = {
 
 const assetStatusMap: Record<string, string> = {
   reserved: "Rezervisano",
+  picked: "Izdato",
   issued: "Izdato",
   returned: "Vraćeno",
+  missing: "Nedostaje",
   cancelled: "Otkazano",
 };
 

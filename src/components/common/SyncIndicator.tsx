@@ -3,7 +3,6 @@ import { CloudOff, CloudSync, CheckCircle2 } from 'lucide-react';
 import { subscribeQueue, queueSize, syncQueue } from '@/features/offline/queue';
 import { useOfflineStatus } from '@/features/offline/use-offline-status';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 
 export function SyncIndicator() {
   const isOffline = useOfflineStatus();
