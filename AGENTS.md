@@ -95,9 +95,23 @@ Statusi definisani u `src/lib/status.ts`:
 - Kada nema interneta, operacije se beleže u lokalni `IndexedDB` preko `src/features/offline/queue.ts`.
 - Čim se uređaj ponovo poveže na mrežu (`navigator.onLine`), red se automatski prazni i sinhronizuje sa Supabase bazom.
 
+### E. Popisi i Sravnjivanje Stanja (Stock Audits)
+- Putanja: `/inventories` i `/inventories/:inventoryId`.
+- Komponente: `src/pages/Inventories.tsx`, `src/pages/InventoryDetails.tsx`, `src/components/inventory/InventoryPrintReport.tsx`.
+- Podržava:
+  - Dashboard sa KPI metrikama (aktivni, završeni, tačnost sravnjenosti, ukupan broj komada).
+  - Filtriranje po statusima (u toku, završeni, otkazani) i lokacijama/magacinima.
+  - Pokretanje popisa sa preporučenim nazivom, izborom lokacije i kategorije opreme.
+  - Dvostruki režim skeniranja: kamera skener + bežični/USB barkod laser sa Web Audio zvučnim i haptičkim odzivom.
+  - Tabela sa statusnim tabovima (sve, manjak, pronađeno, višak) i brzim stepperom količina (`+` / `-`).
+  - Dodavanje nepopisanih (ad-hoc pronađenih) artikala direktno u popis.
+  - Automatsko sravnjivanje trenutnih lokacija pronađene opreme pri zaključivanju.
+  - Zvanični formatirani Zapisnik o popisu opreme za štampu/PDF sa popisnom komisijom i potpisima, plus CSV izvoz.
+
 ---
 
 ## 5. Razvoj i Verifikacija
 * **Dev Server:** `npm run dev` (pokreće se na `https://localhost:5173/` uz mkcert HTTPS).
 * **Build:** `npm run build` (vrši `tsc -b` tipsku proveru i Vite/Rolldown optimizovano pakovanje u podeljene chunk-ove).
 * **Linter:** `npm run lint` (`oxlint` za instant analizu koda).
+
