@@ -108,6 +108,18 @@ Statusi definisani u `src/lib/status.ts`:
   - Automatsko sravnjivanje trenutnih lokacija pronađene opreme pri zaključivanju.
   - Zvanični formatirani Zapisnik o popisu opreme za štampu/PDF sa popisnom komisijom i potpisima, plus CSV izvoz.
 
+### F. Kalendar i Planiranje (Calendar & Scheduling)
+- Putanja: `/calendar`.
+- Komponente: `src/pages/Calendar.tsx`, `src/components/calendar/CalendarEventDialog.tsx`, `src/components/calendar/QuickEventModal.tsx`.
+- Podržava:
+  - Tri režima prikaza:
+    1. **Mesečni kalendar (Month Grid):** Pregled svih dana u mesecu sa brojem artikala, statusnim bojama i klikom na dan za kreiranje.
+    2. **Gantt opterećenja opreme (Equipment Timeline):** Horizontalni Gantt raspored angažovanja opreme po artiklima (7, 14 ili 30 dana).
+    3. **Agenda:** Hronološki spisak predstojećih događaja sa klijentima, lokacijama i satnicom.
+  - KPI Dashboard: Događaji danas, događaji ovog meseca, ukupno angažovano opreme na terenu, upozorenja o kašnjenju povrata (overdue checkouts).
+  - Brzi pregled detalja događaja i angažovane tehnike (`CalendarEventDialog`).
+  - Brzo kreiranje događaja sa selektovanim datumom (`QuickEventModal`).
+
 ---
 
 ## 5. Razvoj i Verifikacija
