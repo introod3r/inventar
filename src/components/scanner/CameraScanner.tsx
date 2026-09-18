@@ -623,7 +623,7 @@ export function CameraScanner({
                 <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-xl" />
 
                 {/* Animated Laser Scanning Line */}
-                <div className="absolute inset-x-2 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse shadow-[0_0_12px_rgba(var(--primary-rgb),0.8)] [animation-duration:2.5s]" />
+                <div className="absolute inset-x-2 top-0 h-1 bg-linear-to-r from-transparent via-primary to-transparent animate-pulse shadow-[0_0_12px_rgba(var(--primary-rgb),0.8)] [animation-duration:2.5s]" />
 
                 {/* Status Indicator Pill */}
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-black/75 backdrop-blur-md px-3.5 py-1 rounded-full text-[11px] text-white/95 font-medium flex items-center gap-1.5 whitespace-nowrap border border-white/10 shadow-lg">
