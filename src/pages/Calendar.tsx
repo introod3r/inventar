@@ -543,11 +543,11 @@ export default function CalendarPage() {
                       setQuickAddDate(date);
                       setQuickAddOpen(true);
                     }}
-                    className={`min-h-[110px] md:min-h-[135px] p-2 flex flex-col justify-between group transition-colors relative cursor-pointer ${
+                    className={`min-h-27.5 md:min-h-33.75 p-2 flex flex-col justify-between group transition-colors relative cursor-pointer ${
                       !isCurrentMonth
                         ? "bg-muted/15 opacity-40 hover:opacity-80"
                         : isToday
-                        ? "bg-primary/[0.03] hover:bg-primary/[0.06]"
+                        ? "bg-primary/3 hover:bg-primary/6"
                         : "hover:bg-muted/30"
                     }`}
                   >
@@ -627,7 +627,7 @@ export default function CalendarPage() {
       {view === "timeline" && (
         <Card className="glass-card overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
-            <div className="min-w-[800px]">
+            <div className="min-w-200">
               {/* Timeline Header */}
               <div
                 className="grid border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground"
@@ -701,7 +701,7 @@ export default function CalendarPage() {
                             <div
                               key={d.toISOString()}
                               className={`border-r border-border/50 last:border-r-0 ${
-                                isToday ? "bg-primary/[0.04]" : isWeekend ? "bg-muted/20" : ""
+                                isToday ? "bg-primary/4" : isWeekend ? "bg-muted/20" : ""
                               }`}
                             />
                           );
@@ -709,7 +709,7 @@ export default function CalendarPage() {
                       </div>
 
                       {/* Reservation Bars */}
-                      <div className="relative py-2.5 space-y-1.5 min-h-[48px] flex flex-col justify-center">
+                      <div className="relative py-2.5 space-y-1.5 min-h-12 flex flex-col justify-center">
                         {group.items.map((r) => {
                           const from = new Date(r.reserved_from);
                           const to = new Date(r.reserved_to);
@@ -787,7 +787,7 @@ export default function CalendarPage() {
                   key={ev.id}
                   onClick={() => setSelectedEventId(ev.id)}
                   className={`glass-card hover:border-primary/50 transition-all duration-200 cursor-pointer overflow-hidden ${
-                    isToday ? "border-primary/40 bg-primary/[0.02]" : ""
+                    isToday ? "border-primary/40 bg-primary/2" : ""
                   }`}
                 >
                   <CardContent className="p-5">
