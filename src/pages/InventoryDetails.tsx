@@ -737,9 +737,9 @@ export default function InventoryDetails() {
                     key={l.id}
                     className={`grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-5 py-3.5 items-center hover:bg-muted/30 transition-colors ${
                       isMissing && counted === 0
-                        ? "bg-rose-500/[0.02]"
+                        ? "bg-rose-500/2"
                         : isOver
-                        ? "bg-amber-500/[0.02]"
+                        ? "bg-amber-500/2"
                         : ""
                     }`}
                   >
