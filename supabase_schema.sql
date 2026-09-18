@@ -677,3 +677,48 @@ REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authentic
 REVOKE EXECUTE ON FUNCTION public.has_role(uuid, app_role) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.has_any_role(uuid, app_role[]) FROM PUBLIC, anon;
 
+-- ============ COMPANY SETTINGS (CUSTOMIZATION) ============
+create table if not exists public.company_settings (
+  id text primary key default 'default',
+  name text not null default 'EventAsset d.o.o.',
+  short_name text not null default 'EVENTASSET',
+  pib text,
+  mb text,
+  bank_account text,
+  address text,
+  city text,
+  postal_code text,
+  country text default 'Srbija',
+  phone text,
+  email text,
+  website text,
+  logo_url text,
+  brand_color text default '#0ea5e9',
+  revers_title text default 'REVERS - ZADUŽENJE OPREME',
+  revers_disclaimer text default 'Preuzimalac svojim potpisom garantuje da je navedenu opremu primio u ispravnom i kompletnom stanju, te preuzima punu materijalnu i krivičnu odgovornost za svako oštećenje ili gubitak opreme do momenta razduživanja.',
+  default_return_days integer default 1,
+  revers_prefix text default 'REV',
+  asset_code_prefix text default 'AST',
+  currency text default 'RSD',
+  depreciation_rate numeric(5,2) default 20.00,
+  qr_label_company_text text default 'EVENTASSET',
+  show_value_on_revers boolean default false,
+  updated_at timestamptz default now()
+);
+alter table public.company_settings enable row level security;
+
+-- All authenticated users can read company settings
+create policy "CompanySettings: read authenticated" on public.company_settings
+  for select to authenticated using (true);
+
+-- Only admins and directors can update or insert company settings
+create policy "CompanySettings: write admin" on public.company_settings
+  for all to authenticated
+  using (public.has_any_role(auth.uid(), ARRAY['admin', 'director']::app_role[]))
+  with check (public.has_any_role(auth.uid(), ARRAY['admin', 'director']::app_role[]));
+
+-- Pre-seed default row if missing
+insert into public.company_settings (id, name, short_name)
+values ('default', 'EventAsset d.o.o.', 'EVENTASSET')
+on conflict (id) do nothing;
+

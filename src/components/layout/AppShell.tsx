@@ -21,9 +21,11 @@ import {
   ShieldAlert,
   Tags,
   Activity,
+  Building2,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { useCompanySettings } from "@/features/company/use-company-settings";
 import { ROLE_LABELS } from "@/features/rbac/permissions";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -75,6 +77,7 @@ const NAV_CATALOGS: NavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, user, signOut, hasPermission, roles } = useAuth();
+  const { settings: companySettings } = useCompanySettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -89,11 +92,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex bg-background overflow-x-hidden w-full">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 border-r bg-sidebar text-sidebar-foreground">
-        <div className="h-16 flex items-center gap-2 px-5 border-b border-sidebar-border">
-          <span className="grid place-items-center w-9 h-9 rounded-lg bg-primary text-primary-foreground">
-            <PackageSearch className="w-5 h-5" />
+        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-sidebar-border">
+          {companySettings.logo_url ? (
+            <img
+              src={companySettings.logo_url}
+              alt={companySettings.short_name}
+              className="h-8 w-auto max-w-[36px] object-contain rounded-md"
+            />
+          ) : (
+            <span className="grid place-items-center w-9 h-9 rounded-lg bg-primary text-primary-foreground">
+              <PackageSearch className="w-5 h-5" />
+            </span>
+          )}
+          <span className="font-semibold tracking-tight truncate" title={companySettings.name}>
+            {companySettings.short_name || "EventAsset"}
           </span>
-          <span className="font-semibold tracking-tight">EventAsset</span>
           <div className="ml-auto flex items-center gap-1"><ThemeToggle /><NotificationsBell /></div>
         </div>
         <div className="px-3 pt-3">
@@ -126,6 +139,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Administracija
               </div>
               <div className="flex flex-col gap-1 px-2">
+                <NavLink to="/settings/company" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <Building2 className="w-5 h-5 text-indigo-500" /> Profil Firme
+                </NavLink>
                 <NavLink to="/settings/categories" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <Tags className="w-5 h-5" /> Šifarnici
                 </NavLink>
@@ -180,6 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className="mt-4 mb-1 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Admin
                     </div>
+                    <SideLink item={{ to: "/settings/company", label: "Profil Firme", icon: Building2, color: "text-indigo-500", bg: "bg-indigo-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/users", label: "Korisnici", icon: Users, color: "text-blue-500", bg: "bg-blue-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/audit-log", label: "Istorija izmena", icon: History, color: "text-amber-500", bg: "bg-amber-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/api-keys", label: "API ključevi", icon: Settings, color: "text-slate-500", bg: "bg-slate-500/15" }} onClick={() => setMobileOpen(false)} />
@@ -189,11 +206,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               </nav>
             </SheetContent>
           </Sheet>
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-            <span className="grid place-items-center w-7 h-7 rounded-md bg-primary text-primary-foreground">
-              <PackageSearch className="w-4 h-4" />
-            </span>
-            EventAsset
+          <Link to="/dashboard" className="flex items-center gap-2 font-semibold truncate max-w-[200px]">
+            {companySettings.logo_url ? (
+              <img
+                src={companySettings.logo_url}
+                alt={companySettings.short_name}
+                className="h-6 w-auto max-w-[28px] object-contain rounded-md"
+              />
+            ) : (
+              <span className="grid place-items-center w-7 h-7 rounded-md bg-primary text-primary-foreground">
+                <PackageSearch className="w-4 h-4" />
+              </span>
+            )}
+            <span className="truncate">{companySettings.short_name || "EventAsset"}</span>
           </Link>
           <div className="ml-auto flex items-center gap-1">
             <Button

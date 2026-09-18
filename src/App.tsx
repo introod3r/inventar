@@ -41,6 +41,7 @@ const SettingsBackup = lazy(() => import('@/pages/SettingsBackup'));
 const SettingsCategories = lazy(() => import('@/pages/SettingsCategories'));
 const SettingsUsers = lazy(() => import('@/pages/SettingsUsers'));
 const SettingsRolePermissions = lazy(() => import('@/pages/SettingsRolePermissions'));
+const SettingsCompany = lazy(() => import('@/pages/SettingsCompany'));
 
 const LayoutWrapper = () => (
   <AppShell>
@@ -97,6 +98,7 @@ function App() {
                     <Route path="inventories" element={<Inventories />} />
                     <Route path="inventories/:inventoryId" element={<InventoryDetails />} />
                     
+                    <Route path="settings/company" element={<SettingsCompany />} />
                     <Route path="settings/api-keys" element={<SettingsApiKeys />} />
                     <Route path="settings/audit-log" element={<SettingsAuditLog />} />
                     <Route path="settings/backup" element={<SettingsBackup />} />

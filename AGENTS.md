@@ -132,6 +132,22 @@ Statusi definisani u `src/lib/status.ts`:
   - Brzi pregled detalja događaja i angažovane tehnike (`CalendarEventDialog`).
   - Brzo kreiranje događaja sa selektovanim datumom (`QuickEventModal`).
 
+### G. Prilagođavanje Firme & Brending (Company Customization / White-label)
+- Putanja: `/settings/company`.
+- Komponente i servisi: `src/pages/SettingsCompany.tsx`, `src/features/company/use-company-settings.ts`.
+- Dozvole: **Isključivo administrator** (`hasRole("admin")` i `hasPermission("admin")`).
+- Podržava:
+  - **Profil i pravni podaci:** Puni naziv preduzeća, skraćeni brend naziv za mobilne ekrane, PIB, MB, žiro račun i banka, adresa sedišta, kontakt telefon, zvanični email, web sajt.
+  - **Logotip i vizuelni brending:** Upload slike logotipa (PNG, SVG, JPG) sa brisanjem i pregledom; izbor primarne akcentne boje sistema (Sky Blue, Emerald, Indigo, Violet, Amber, Crimson, Cyan ili proizvoljni HEX kod).
+  - **PDF Revers i zaduživanja:** Zvanični naslov dokumenta, pravna klauzula / izjava o materijalnoj odgovornosti preuzimaoca opreme (štampa se iznad potpisa), prefiks broja reversa, podrazumevani rok povrata, opcija prikaza nabavne vrednosti opreme.
+  - **Šifarnik i inventar:** Prefiks automatskih šifara opreme (`EQ-`, `AST-`), valuta sistema (`RSD`, `EUR`, `USD`, `CHF`, `BAM`), godišnja stopa amortizacije (%) i tekst na QR nalepnicama.
+  - **Globalna integracija:**
+    - `AppShell.tsx`: Prikaz logotipa i brend naziva u zaglavlju i bočnoj traci.
+    - `revers-pdf.ts`: Automatski memorandum sa podacima firme, pravnom klauzulom i logotipom.
+    - `PrintQrDialog.tsx`: Preuzimanje brend imena za štampu QR nalepnica.
+    - `InventoryPrintReport.tsx`: Zvanično zaglavlje firme na Zapisniku o popisu.
+  - **Baza podataka:** Tabela `company_settings` sa RLS politikom (`SELECT` dozvoljen ulogovanima, `INSERT`/`UPDATE` samo administratorima).
+
 ---
 
 ## 5. Razvoj i Verifikacija

@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Printer, QrCode, Layers, Eye, Check, Settings2 } from "lucide-react";
 import { printQrSheet, generateQrDataUrl, type QrItem, type QrLayout, type QrPrintOptions } from "@/lib/qr-print";
+import { useCompanySettings } from "@/features/company/use-company-settings";
 import { toast } from "sonner";
 
 interface PrintQrDialogProps {
@@ -17,14 +18,23 @@ interface PrintQrDialogProps {
 }
 
 export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialogProps) {
+  const { settings: companySettings } = useCompanySettings();
   const [layout, setLayout] = useState<QrLayout>("a4_24");
   const [showCode, setShowCode] = useState(true);
   const [showName, setShowName] = useState(true);
   const [showSerial, setShowSerial] = useState(true);
   const [showCompany, setShowCompany] = useState(true);
-  const [companyName, setCompanyName] = useState("SKYMUSIC INVENTAR");
+  const [companyName, setCompanyName] = useState(
+    companySettings.qr_label_company_text || companySettings.short_name || "INVENTAR"
+  );
   const [isPrinting, setIsPrinting] = useState(false);
   const [previewQrUrl, setPreviewQrUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (companySettings) {
+      setCompanyName(companySettings.qr_label_company_text || companySettings.short_name || "INVENTAR");
+    }
+  }, [companySettings]);
 
   const sampleItem: QrItem = items[0] ?? {
     code: "EQ-PA-001",

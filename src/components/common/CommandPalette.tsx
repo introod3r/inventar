@@ -41,6 +41,7 @@ const NAV_ITEMS = [
   { to: "/locations", label: "Lokacije", icon: MapPin },
   { to: "/clients", label: "Klijenti", icon: Users },
   { to: "/reports", label: "Izveštaji", icon: BarChart3 },
+  { to: "/settings/company", label: "Profil Firme & Brending (admin)", icon: Settings },
   { to: "/settings/users", label: "Korisnici (admin)", icon: Settings },
   { to: "/settings/api-keys", label: "API ključevi (admin)", icon: Settings },
 ] as const;

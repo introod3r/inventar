@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Printer, FileText } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
-
+import { useCompanySettings } from "@/features/company/use-company-settings";
 
 export interface InventoryReportLine {
   id: string;
@@ -38,6 +38,7 @@ export interface InventoryReportProps {
 }
 
 export function InventoryPrintReport({ open, onOpenChange, inventory, lines }: InventoryReportProps) {
+  const { settings: companySettings } = useCompanySettings();
   const printContentRef = useRef<HTMLDivElement>(null);
 
   const totalExpected = lines.reduce((acc, l) => acc + (l.expected_qty || 0), 0);
@@ -91,6 +92,9 @@ export function InventoryPrintReport({ open, onOpenChange, inventory, lines }: I
             {/* Header */}
             <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
               <div>
+                <div className="text-[11px] font-bold text-slate-800 uppercase tracking-wider mb-1">
+                  {companySettings.name} {companySettings.pib ? `| PIB: ${companySettings.pib}` : ""} {companySettings.city ? `(${companySettings.city})` : ""}
+                </div>
                 <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                   Zapisnik o Popisu Opreme
                 </h1>
