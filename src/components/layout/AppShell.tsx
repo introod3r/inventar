@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img
               src={companySettings.logo_url}
               alt={companySettings.short_name}
-              className="h-8 w-auto max-w-[36px] object-contain rounded-md"
+              className="h-8 w-auto max-w-9 object-contain rounded-md"
             />
           ) : (
             <span className="grid place-items-center w-9 h-9 rounded-lg bg-primary text-primary-foreground">
@@ -206,12 +206,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </nav>
             </SheetContent>
           </Sheet>
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold truncate max-w-[200px]">
+          <Link to="/dashboard" className="flex items-center gap-2 font-semibold truncate max-w-50">
             {companySettings.logo_url ? (
               <img
                 src={companySettings.logo_url}
                 alt={companySettings.short_name}
-                className="h-6 w-auto max-w-[28px] object-contain rounded-md"
+                className="h-6 w-auto max-w-7 object-contain rounded-md"
               />
             ) : (
               <span className="grid place-items-center w-7 h-7 rounded-md bg-primary text-primary-foreground">

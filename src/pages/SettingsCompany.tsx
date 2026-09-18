@@ -433,7 +433,7 @@ export default function SettingsCompany() {
                         <div
                           className={`w-8 h-8 rounded-full ${p.class} shadow-sm flex items-center justify-center text-white transition-transform group-hover:scale-110`}
                         >
-                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                          {isSelected && <Check className="w-4 h-4 stroke-3" />}
                         </div>
                         <span className="text-[11px] font-medium text-muted-foreground">
                           {p.label}
