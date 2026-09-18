@@ -242,15 +242,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
         <CommandPalette />
 
-        {/* Mobile bottom nav - Exact style from user screenshot */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-16 border-t border-slate-800/80 bg-slate-950 text-slate-400 shadow-2xl flex items-center justify-around px-1 pb-safe">
+        {/* Mobile bottom nav - Sleek theme-aware dock */}
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-16 border-t border-border/80 bg-card/95 backdrop-blur text-muted-foreground shadow-lg dark:border-slate-800/80 dark:bg-slate-950 dark:text-slate-400 flex items-center justify-around px-1 pb-safe">
           {/* 1. Pregled */}
           <Link
             to="/dashboard"
             className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors ${
               location.pathname === "/dashboard" || location.pathname === "/"
-                ? "text-sky-400 font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "text-primary dark:text-sky-400 font-semibold"
+                : "text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             <LayoutDashboard className="h-5.5 w-5.5 stroke-2" />
@@ -262,8 +262,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             to="/assets"
             className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors ${
               location.pathname.startsWith("/assets")
-                ? "text-sky-400 font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "text-primary dark:text-sky-400 font-semibold"
+                : "text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             <Package className="h-5.5 w-5.5 stroke-2" />
@@ -279,8 +279,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div
               className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${
                 location.pathname === "/scan"
-                  ? "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.65)] scale-105 ring-4 ring-slate-950"
-                  : "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_6px_20px_rgba(37,99,235,0.5)] hover:scale-105 ring-4 ring-slate-950"
+                  ? "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.45)] scale-105 ring-4 ring-background dark:ring-slate-950"
+                  : "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_6px_20px_rgba(37,99,235,0.35)] hover:scale-105 ring-4 ring-background dark:ring-slate-950"
               }`}
             >
               <Camera className="h-7 w-7 text-white stroke-2" />
@@ -292,8 +292,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             to="/events"
             className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors ${
               location.pathname.startsWith("/events")
-                ? "text-sky-400 font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "text-primary dark:text-sky-400 font-semibold"
+                : "text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             <CalendarRange className="h-5.5 w-5.5 stroke-2" />
@@ -304,7 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-slate-400 hover:text-slate-200 transition-colors"
+            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
           >
             <MoreHorizontal className="h-5.5 w-5.5 stroke-2" />
             <span className="text-[11px] font-medium tracking-tight">Meni</span>

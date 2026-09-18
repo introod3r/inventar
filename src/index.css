@@ -61,57 +61,65 @@
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(0.99 0.003 250);
-  --foreground: oklch(0.18 0.025 260);
+  /* Elevated surface contrast: slate-white canvas with pure white elevated cards */
+  --background: oklch(0.975 0.006 250);
+  --foreground: oklch(0.14 0.025 260);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.025 260);
+  --card-foreground: oklch(0.14 0.025 260);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.025 260);
+  --popover-foreground: oklch(0.14 0.025 260);
 
-  --primary: oklch(0.55 0.19 258);
-  --primary-foreground: oklch(0.99 0.005 250);
+  /* Deep royal blue accent for strong light mode legibility */
+  --primary: oklch(0.50 0.20 258);
+  --primary-foreground: oklch(1 0 0);
 
-  --secondary: oklch(0.96 0.008 250);
-  --secondary-foreground: oklch(0.22 0.03 260);
+  --secondary: oklch(0.94 0.010 250);
+  --secondary-foreground: oklch(0.18 0.03 260);
 
-  --muted: oklch(0.965 0.006 250);
-  --muted-foreground: oklch(0.5 0.02 258);
+  --muted: oklch(0.95 0.008 250);
+  --muted-foreground: oklch(0.40 0.025 258);
 
-  --accent: oklch(0.95 0.02 258);
-  --accent-foreground: oklch(0.3 0.1 258);
+  --accent: oklch(0.94 0.020 258);
+  --accent-foreground: oklch(0.25 0.12 258);
 
-  --destructive: oklch(0.6 0.22 27);
-  --destructive-foreground: oklch(0.99 0.005 250);
+  /* Deep ruby red for destructive actions */
+  --destructive: oklch(0.52 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
 
-  --success: oklch(0.65 0.16 152);
-  --success-foreground: oklch(0.99 0.005 250);
+  /* Saturated emerald green with > 4.5:1 text contrast */
+  --success: oklch(0.46 0.17 150);
+  --success-foreground: oklch(1 0 0);
 
-  --warning: oklch(0.78 0.16 75);
-  --warning-foreground: oklch(0.2 0.05 70);
+  /* Rich amber-gold with deep contrast foreground */
+  --warning: oklch(0.74 0.16 75);
+  --warning-foreground: oklch(0.28 0.10 65);
 
-  --info: oklch(0.65 0.13 230);
-  --info-foreground: oklch(0.99 0.005 250);
+  /* Vivid azure info */
+  --info: oklch(0.48 0.16 240);
+  --info-foreground: oklch(1 0 0);
 
-  --border: oklch(0.92 0.01 255);
-  --input: oklch(0.93 0.01 255);
-  --ring: oklch(0.55 0.19 258);
+  /* Sharpened borders & inputs for clean, crisp edge definition */
+  --border: oklch(0.89 0.012 255);
+  --input: oklch(0.86 0.014 255);
+  --ring: oklch(0.50 0.20 258);
 
-  --chart-1: oklch(0.55 0.19 258);
-  --chart-2: oklch(0.65 0.16 152);
-  --chart-3: oklch(0.78 0.16 75);
-  --chart-4: oklch(0.65 0.13 230);
-  --chart-5: oklch(0.6 0.22 27);
+  --chart-1: oklch(0.50 0.20 258);
+  --chart-2: oklch(0.46 0.17 150);
+  --chart-3: oklch(0.74 0.16 75);
+  --chart-4: oklch(0.48 0.16 240);
+  --chart-5: oklch(0.52 0.22 27);
 
-  --sidebar: oklch(0.985 0.004 250);
-  --sidebar-foreground: oklch(0.22 0.025 260);
-  --sidebar-primary: oklch(0.55 0.19 258);
-  --sidebar-primary-foreground: oklch(0.99 0.005 250);
-  --sidebar-accent: oklch(0.95 0.012 255);
-  --sidebar-accent-foreground: oklch(0.22 0.03 260);
-  --sidebar-border: oklch(0.92 0.01 255);
-  --sidebar-ring: oklch(0.55 0.19 258);
+  /* Crisp sidebar with subtle depth separation */
+  --sidebar: oklch(0.985 0.005 250);
+  --sidebar-foreground: oklch(0.18 0.025 260);
+  --sidebar-primary: oklch(0.50 0.20 258);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.935 0.012 255);
+  --sidebar-accent-foreground: oklch(0.14 0.025 260);
+  --sidebar-border: oklch(0.89 0.012 255);
+  --sidebar-ring: oklch(0.50 0.20 258);
 }
 
 .dark {
@@ -175,27 +183,27 @@
 
   /* PREMIUM UI / UX UTILITIES */
   .glass-panel {
-    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 shadow-sm;
+    @apply bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/50 shadow-xs;
   }
 
   .glass-card {
-    @apply bg-white/70 dark:bg-[#161a23]/70 backdrop-blur-lg border border-white/50 dark:border-slate-800/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)];
+    @apply bg-white/90 dark:bg-[#161a23]/70 backdrop-blur-lg border border-slate-200/80 dark:border-slate-800/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06),0_1px_3px_0_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08),0_2px_6px_0_rgba(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)];
   }
 
   .card-hover-effect {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30;
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/40;
   }
 
   .gradient-heading {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-300 dark:to-white;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-slate-950 via-slate-800 to-slate-950 dark:from-white dark:via-slate-300 dark:to-white;
   }
   
   .gradient-accent {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-cyan-500 to-blue-500;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400;
   }
 
   .mesh-bg {
-    @apply bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-indigo-100/20 via-slate-50/10 to-transparent dark:from-cyan-900/10 dark:via-slate-900/10 dark:to-transparent;
+    @apply bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-indigo-100/30 via-slate-100/20 to-transparent dark:from-cyan-900/10 dark:via-slate-900/10 dark:to-transparent;
   }
 }
 

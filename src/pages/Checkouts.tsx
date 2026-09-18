@@ -191,23 +191,23 @@ export default function CheckoutsPage() {
     
     return (
       <PageContainer>
-          <div className="bg-[#151921] rounded-2xl border border-slate-800/80 shadow-2xl overflow-hidden text-slate-300 flex flex-col">
+        <div className="bg-card rounded-2xl border border-border shadow-2xl overflow-hidden text-card-foreground flex flex-col">
           
           {/* Header */}
-          <div className="flex flex-wrap items-center justify-between p-5 border-b border-slate-800/60 bg-[#1A1F2A]/50">
+          <div className="flex flex-wrap items-center justify-between p-5 border-b border-border bg-muted/40">
             <div className="flex items-center gap-3">
-              <div className="px-3 py-1.5 rounded-md bg-cyan-950/30 border border-cyan-900/50 text-cyan-400 font-mono text-sm font-semibold tracking-wider">
+              <div className="px-3 py-1.5 rounded-md bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/50 text-cyan-700 dark:text-cyan-400 font-mono text-sm font-semibold tracking-wider">
                 {revCode}
               </div>
               <div className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 border ${
-                isOpen ? "bg-amber-950/80 border-amber-500/40 text-amber-300" : "bg-emerald-950/80 border-emerald-500/40 text-emerald-300"
+                isOpen ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/80 dark:border-amber-500/40 dark:text-amber-300" : "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-500/40 dark:text-emerald-300"
               }`}>
-                <span className={`h-2 w-2 rounded-full ${isOpen ? "bg-amber-400 animate-pulse" : "bg-emerald-400"} `} />
+                <span className={`h-2 w-2 rounded-full ${isOpen ? "bg-amber-500 animate-pulse" : "bg-emerald-500"} `} />
                 {isOpen ? "OTVORENO" : "ZATVORENO"}
               </div>
             </div>
             <div className="flex items-center gap-4 mt-4 sm:mt-0">
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white rounded-full" onClick={() => setSelectedGroup(null)}>
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full" onClick={() => setSelectedGroup(null)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -215,44 +215,44 @@ export default function CheckoutsPage() {
 
           {/* Details Section */}
           <div className="p-6 md:p-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100 leading-tight mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2">
               Revers: {c.events?.name ?? "Bez događaja"}
             </h1>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
               Zaduženje opreme kreirano {formatDate(c.checked_out_at)}.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Klijent / Događaj */}
-              <div className="bg-[#1A1F2A] border border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
-                <div className="text-xs text-slate-500 mb-1">Događaj / Klijent</div>
-                <div className="text-slate-200 font-medium line-clamp-1">{c.events?.name ?? "N/A"}</div>
-                <div className="text-slate-400 text-xs line-clamp-1">{c.events?.clients?.name ?? ""}</div>
+              <div className="bg-muted/40 dark:bg-[#1A1F2A] border border-border dark:border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
+                <div className="text-xs text-muted-foreground mb-1">Događaj / Klijent</div>
+                <div className="text-foreground font-medium line-clamp-1">{c.events?.name ?? "N/A"}</div>
+                <div className="text-muted-foreground text-xs line-clamp-1">{c.events?.clients?.name ?? ""}</div>
               </div>
               
               {/* Odgovorno Lice */}
-              <div className="bg-[#1A1F2A] border border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
-                <div className="text-xs text-slate-500 mb-1">Zadužio</div>
-                <div className="flex items-center gap-1.5 text-cyan-400 font-medium">
+              <div className="bg-muted/40 dark:bg-[#1A1F2A] border border-border dark:border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
+                <div className="text-xs text-muted-foreground mb-1">Zadužio</div>
+                <div className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-medium">
                   <User className="h-4 w-4 shrink-0" />
                   <span className="truncate">{c.checked_out_to_name || "Nepoznato"}</span>
                 </div>
               </div>
 
               {/* Izdato */}
-              <div className="bg-[#1A1F2A] border border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
-                <div className="text-xs text-slate-500 mb-1">Datum Izdavanja</div>
-                <div className="flex items-center gap-1.5 text-slate-200 font-medium">
-                  <CalendarDays className="h-4 w-4 text-slate-400 shrink-0" />
+              <div className="bg-muted/40 dark:bg-[#1A1F2A] border border-border dark:border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
+                <div className="text-xs text-muted-foreground mb-1">Datum Izdavanja</div>
+                <div className="flex items-center gap-1.5 text-foreground font-medium">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="truncate">{formatDateTime(c.checked_out_at)}</span>
                 </div>
               </div>
 
               {/* Ocekivani Povratak */}
-              <div className="bg-[#1A1F2A] border border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
-                <div className="text-xs text-slate-500 mb-1">Očekivani Povratak</div>
-                <div className="flex items-center gap-1.5 text-slate-200 font-medium">
-                  <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+              <div className="bg-muted/40 dark:bg-[#1A1F2A] border border-border dark:border-slate-800/60 rounded-xl p-4 flex flex-col justify-center">
+                <div className="text-xs text-muted-foreground mb-1">Očekivani Povratak</div>
+                <div className="flex items-center gap-1.5 text-foreground font-medium">
+                  <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="truncate">{c.expected_return_at ? formatDateTime(c.expected_return_at) : "Nije definisano"}</span>
                 </div>
               </div>
@@ -262,32 +262,32 @@ export default function CheckoutsPage() {
           {/* Spisak opreme */}
           <div className="px-6 md:px-8 pb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Spisak Opreme ({selectedGroup.length} Stavki)</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Spisak Opreme ({selectedGroup.length} Stavki)</h3>
               {isOpen && (
-                <Button size="sm" variant="outline" className="h-8 border-cyan-900/50 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-900/40 hover:text-cyan-300" onClick={() => setReturnWizardOpen(true)}>
+                <Button size="sm" variant="outline" className="h-8 border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-500/20" onClick={() => setReturnWizardOpen(true)}>
                   <Undo2 className="mr-2 h-3.5 w-3.5" /> Grupni Povrat
                 </Button>
               )}
             </div>
             
-            <div className="bg-[#1A1F2A] border border-slate-800/60 rounded-xl overflow-hidden">
-              <div className="divide-y divide-slate-800/60">
+            <div className="bg-card dark:bg-[#1A1F2A] border border-border dark:border-slate-800/60 rounded-xl overflow-hidden">
+              <div className="divide-y divide-border dark:divide-slate-800/60">
                 {selectedGroup.map(row => (
-                  <div key={row.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/30 transition-colors">
+                  <div key={row.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/50 dark:hover:bg-slate-800/30 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-slate-200 text-sm">{row.assets?.name}</div>
-                      <div className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
+                      <div className="font-semibold text-foreground text-sm">{row.assets?.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-1 flex items-center gap-2">
                         <span>{row.assets?.code}</span>
                         {row.assets?.serial_number && <span>• S/N: {row.assets.serial_number}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {row.returned_at ? (
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium px-2 py-1 rounded bg-emerald-950/30 border border-emerald-900/50">
+                        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-xs font-medium px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
                           <CheckCircle2 className="h-3.5 w-3.5" /> Vraćeno
                         </div>
                       ) : (
-                        <Button size="sm" className="h-8 bg-slate-800 hover:bg-slate-700 text-slate-200" onClick={() => setReturnFor(row)}>
+                        <Button size="sm" variant="secondary" className="h-8" onClick={() => setReturnFor(row)}>
                           Razduži
                         </Button>
                       )}
@@ -299,10 +299,10 @@ export default function CheckoutsPage() {
           </div>
 
           {/* Footer / PDF Download */}
-          <div className="bg-[#111318] border-t border-slate-800/60 p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="bg-muted/30 dark:bg-[#111318] border-t border-border dark:border-slate-800/60 p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <div className="text-xs font-bold text-cyan-800 uppercase tracking-widest mb-2">Dokumentacija</div>
-              <div className="text-sm text-slate-400">Preuzmi revers u PDF formatu za potpisivanje ili arhivu.</div>
+              <div className="text-xs font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-widest mb-1">Dokumentacija</div>
+              <div className="text-sm text-muted-foreground">Preuzmi revers u PDF formatu za potpisivanje ili arhivu.</div>
             </div>
             <div className="flex items-center gap-3">
               {canDelete && (
@@ -366,13 +366,13 @@ export default function CheckoutsPage() {
             placeholder="Pretraži po događaju, licu, šifri opreme..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="pl-10 bg-slate-900/60 border-slate-800 focus-visible:ring-primary/50 text-sm h-10 rounded-lg"
+            className="pl-10 bg-card border-input focus-visible:ring-primary/50 text-sm h-10 rounded-lg shadow-xs"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <Select value={status} onValueChange={(v) => setStatus(v as "all" | "open" | "closed")}>
-            <SelectTrigger className="w-full sm:w-44 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
+            <SelectTrigger className="w-full sm:w-44 bg-card border-input h-10 rounded-lg text-sm shadow-xs">
               <SelectValue placeholder="Svi Statusi" />
             </SelectTrigger>
             <SelectContent>
@@ -383,7 +383,7 @@ export default function CheckoutsPage() {
           </Select>
 
           <Select value={sortOption} onValueChange={setSortOption}>
-            <SelectTrigger className="w-full sm:w-44 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
+            <SelectTrigger className="w-full sm:w-44 bg-card border-input h-10 rounded-lg text-sm shadow-xs">
               <SelectValue placeholder="Sortiraj" />
             </SelectTrigger>
             <SelectContent>
@@ -394,12 +394,12 @@ export default function CheckoutsPage() {
           </Select>
 
           {/* View Mode Toggle Switcher */}
-          <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-lg p-1 h-10 gap-1 ml-auto sm:ml-0">
+          <div className="flex items-center bg-muted/60 border border-border rounded-lg p-1 h-10 gap-1 ml-auto sm:ml-0">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="icon"
               className={`h-8 w-8 rounded-md transition ${
-                viewMode === "grid" ? "bg-slate-800 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                viewMode === "grid" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setViewMode("grid")}
               title="Prikaz u mreži (Grid)"
@@ -410,7 +410,7 @@ export default function CheckoutsPage() {
               variant={viewMode === "list" ? "secondary" : "ghost"}
               size="icon"
               className={`h-8 w-8 rounded-md transition ${
-                viewMode === "list" ? "bg-slate-800 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                viewMode === "list" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setViewMode("list")}
               title="Prikaz u listi (Tabela)"
@@ -424,10 +424,10 @@ export default function CheckoutsPage() {
       {isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Učitavanje…</div>
       ) : !groupedData.length ? (
-        <div className="py-12 text-center bg-[#151921] border border-slate-800/80 rounded-2xl">
-          <Receipt className="h-10 w-10 mx-auto text-slate-600 mb-3" />
-          <h3 className="text-lg font-medium text-slate-200">Nema reversa</h3>
-          <p className="text-sm text-slate-400 mt-1">Nismo pronašli revers za odabrane filtere.</p>
+        <div className="py-12 text-center bg-card border border-border rounded-2xl shadow-xs">
+          <Receipt className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-lg font-medium text-foreground">Nema reversa</h3>
+          <p className="text-sm text-muted-foreground mt-1">Nismo pronašli revers za odabrane filtere.</p>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4.5">
@@ -441,56 +441,56 @@ export default function CheckoutsPage() {
             return (
               <div 
                 key={c.signature_path || c.id} 
-                className="group relative flex flex-col justify-between rounded-2xl overflow-hidden border bg-slate-900/70 hover:bg-slate-900/90 transition-all duration-300 hover:border-slate-700 hover:shadow-xl cursor-pointer border-slate-800/80"
+                className="group relative flex flex-col justify-between rounded-2xl overflow-hidden border bg-card hover:bg-card/90 transition-all duration-300 hover:border-primary/40 hover:shadow-md cursor-pointer border-border"
                 onClick={() => setSelectedGroup(group)}
               >
-                <div className="relative w-full bg-slate-950/50 p-5 border-b border-slate-800/60 flex flex-col gap-3">
+                <div className="relative w-full bg-muted/30 p-5 border-b border-border flex flex-col gap-3">
                   <div className="flex justify-between items-start">
-                    <div className="px-2 py-1 rounded bg-slate-800/50 border border-slate-700/50 text-slate-300 font-mono text-[10px] font-semibold tracking-wider">
+                    <div className="px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-[10px] font-semibold tracking-wider">
                       {revCode}
                     </div>
                     <div className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 border ${
-                      isOpen ? "bg-amber-950/80 border-amber-500/40 text-amber-300" : "bg-emerald-950/80 border-emerald-500/40 text-emerald-300"
+                      isOpen ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/80 dark:border-amber-500/40 dark:text-amber-300" : "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-500/40 dark:text-emerald-300"
                     }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-amber-400 animate-pulse" : "bg-emerald-400"} `} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-amber-500 animate-pulse" : "bg-emerald-500"} `} />
                       {isOpen ? "OTVORENO" : "ZATVORENO"}
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-100 text-lg tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-foreground text-lg tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
                       {c.events?.name ?? "Bez događaja"}
                     </h3>
                     {c.events?.clients?.name && (
-                      <div className="text-xs text-slate-400 mt-1 line-clamp-1">{c.events.clients.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{c.events.clients.name}</div>
                     )}
                   </div>
                 </div>
 
                 <div className="p-5 flex flex-col gap-3 flex-1">
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex items-center gap-2.5 text-slate-300">
-                      <User className="h-4 w-4 text-cyan-500 shrink-0" />
+                    <div className="flex items-center gap-2.5 text-foreground">
+                      <User className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span className="font-medium truncate">{c.checked_out_to_name || "Nepoznato lice"}</span>
                     </div>
-                    <div className="flex items-center gap-2.5 text-slate-300">
-                      <CalendarDays className="h-4 w-4 text-slate-500 shrink-0" />
+                    <div className="flex items-center gap-2.5 text-muted-foreground">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span>Izdato: {formatDate(c.checked_out_at)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 border-t border-slate-800/60 bg-[#1A1F2A]/30 flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">{totalAssets} {totalAssets === 1 ? "Stavka" : "Stavki"}</span>
-                  <span className="text-cyan-500 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Detalji <span className="text-lg leading-none">&rarr;</span></span>
+                <div className="p-4 border-t border-border bg-muted/20 flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground font-medium">{totalAssets} {totalAssets === 1 ? "Stavka" : "Stavki"}</span>
+                  <span className="text-cyan-600 dark:text-cyan-400 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Detalji <span className="text-lg leading-none">&rarr;</span></span>
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <Card className="overflow-hidden card-elevated border-slate-800 bg-[#151921]">
-          <div className="divide-y divide-slate-800/60">
-            <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 text-xs uppercase tracking-wider text-slate-500 bg-slate-900/50 font-medium">
+        <Card className="overflow-hidden card-elevated border-border bg-card">
+          <div className="divide-y divide-border">
+            <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 text-xs uppercase tracking-wider text-muted-foreground bg-muted/40 font-semibold border-b border-border">
               <div className="col-span-2">Šifra Reversa</div>
               <div className="col-span-3">Događaj</div>
               <div className="col-span-2">Zadužio</div>
@@ -507,22 +507,22 @@ export default function CheckoutsPage() {
               return (
                 <div
                   key={c.signature_path || c.id}
-                  className="grid grid-cols-12 gap-3 md:gap-4 px-5 py-3.5 items-center cursor-pointer hover:bg-slate-800/40 transition-colors"
+                  className="grid grid-cols-12 gap-3 md:gap-4 px-5 py-3.5 items-center cursor-pointer hover:bg-muted/40 transition-colors"
                   onClick={() => setSelectedGroup(group)}
                 >
-                  <div className="col-span-12 md:col-span-2 font-mono text-sm text-slate-300 font-medium">{revCode}</div>
+                  <div className="col-span-12 md:col-span-2 font-mono text-sm text-foreground font-medium">{revCode}</div>
                   <div className="col-span-12 md:col-span-3">
-                    <div className="font-medium text-slate-200 line-clamp-1">{c.events?.name ?? "Bez događaja"}</div>
-                    {c.events?.clients?.name && <div className="text-xs text-slate-500 line-clamp-1">{c.events.clients.name}</div>}
+                    <div className="font-medium text-foreground line-clamp-1">{c.events?.name ?? "Bez događaja"}</div>
+                    {c.events?.clients?.name && <div className="text-xs text-muted-foreground line-clamp-1">{c.events.clients.name}</div>}
                   </div>
-                  <div className="hidden md:block col-span-2 text-sm text-slate-300 line-clamp-1">{c.checked_out_to_name || "—"}</div>
-                  <div className="hidden md:block col-span-2 text-sm text-slate-400">{formatDate(c.checked_out_at)}</div>
-                  <div className="hidden md:block col-span-1 text-sm text-center text-slate-300 font-medium">{group.length}</div>
+                  <div className="hidden md:block col-span-2 text-sm text-foreground line-clamp-1">{c.checked_out_to_name || "—"}</div>
+                  <div className="hidden md:block col-span-2 text-sm text-muted-foreground">{formatDate(c.checked_out_at)}</div>
+                  <div className="hidden md:block col-span-1 text-sm text-center text-foreground font-medium">{group.length}</div>
                   <div className="hidden md:block col-span-2 text-right">
                     <div className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider items-center gap-1.5 border ${
-                      isOpen ? "bg-amber-950/80 border-amber-500/40 text-amber-300" : "bg-emerald-950/80 border-emerald-500/40 text-emerald-300"
+                      isOpen ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/80 dark:border-amber-500/40 dark:text-amber-300" : "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-500/40 dark:text-emerald-300"
                     }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-amber-400 animate-pulse" : "bg-emerald-400"} `} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-amber-500 animate-pulse" : "bg-emerald-500"} `} />
                       {isOpen ? "OTVORENO" : "ZATVORENO"}
                     </div>
                   </div>

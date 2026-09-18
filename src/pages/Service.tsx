@@ -46,16 +46,16 @@ type DamagedAssetRow = {
 };
 
 const PRIORITY_MAP: Record<string, { label: string; bg: string; text: string }> = {
-  repair: { label: "PRIORITET: VISOKA", bg: "bg-rose-950/60 border-rose-800/50", text: "text-rose-400" },
-  maintenance: { label: "PRIORITET: SREDNJA", bg: "bg-amber-950/60 border-amber-800/50", text: "text-amber-400" },
-  inspection: { label: "PRIORITET: NISKA", bg: "bg-blue-950/60 border-blue-800/50", text: "text-blue-400" },
+  repair: { label: "PRIORITET: VISOKA", bg: "bg-rose-50 border-rose-200 dark:bg-rose-950/60 dark:border-rose-800/50", text: "text-rose-700 dark:text-rose-400" },
+  maintenance: { label: "PRIORITET: SREDNJA", bg: "bg-amber-50 border-amber-200 dark:bg-amber-950/60 dark:border-amber-800/50", text: "text-amber-800 dark:text-amber-400" },
+  inspection: { label: "PRIORITET: NISKA", bg: "bg-blue-50 border-blue-200 dark:bg-blue-950/60 dark:border-blue-800/50", text: "text-blue-700 dark:text-blue-400" },
 };
 
 const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = {
-  reported: { label: "PRIJAVLJENO", bg: "bg-slate-800/80 border-slate-700/60", text: "text-slate-300" },
-  in_progress: { label: "U_SERVISU", bg: "bg-cyan-950/80 border-cyan-800/60", text: "text-cyan-300" },
-  completed: { label: "ZAVRŠENO", bg: "bg-emerald-950/80 border-emerald-800/60", text: "text-emerald-300" },
-  cancelled: { label: "OTKAZANO", bg: "bg-rose-950/80 border-rose-800/60", text: "text-rose-300" },
+  reported: { label: "PRIJAVLJENO", bg: "bg-slate-100 border-slate-200 dark:bg-slate-800/80 dark:border-slate-700/60", text: "text-slate-700 dark:text-slate-300" },
+  in_progress: { label: "U_SERVISU", bg: "bg-cyan-50 border-cyan-200 dark:bg-cyan-950/80 dark:border-cyan-800/60", text: "text-cyan-700 dark:text-cyan-300" },
+  completed: { label: "ZAVRŠENO", bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-800/60", text: "text-emerald-700 dark:text-emerald-300" },
+  cancelled: { label: "OTKAZANO", bg: "bg-rose-50 border-rose-200 dark:bg-rose-950/80 dark:border-rose-800/60", text: "text-rose-700 dark:text-rose-300" },
 };
 
 export default function ServicePage() {
@@ -310,32 +310,32 @@ export default function ServicePage() {
             
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white hover:bg-slate-100 text-slate-950 font-bold shadow-lg shadow-white/10 text-sm px-4">
-                  <AlertTriangle className="mr-2 h-4 w-4 text-rose-600 fill-rose-600/20" /> PRIJAVI KVAR
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/20 text-sm px-4">
+                  <AlertTriangle className="mr-2 h-4 w-4 text-white" /> PRIJAVI KVAR
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#151921] border-slate-800 text-slate-200">
+              <DialogContent className="bg-card border-border text-foreground">
                 <DialogHeader>
-                  <DialogTitle className="text-slate-100 flex items-center gap-2">
+                  <DialogTitle className="text-foreground flex items-center gap-2">
                     <Wrench className="h-5 w-5 text-rose-500" /> 
                     {selectedDamagedAsset ? `Slanje na Servis: ${selectedDamagedAsset.name}` : "Prijava Kvara ili Servisa"}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div className="space-y-1.5">
-                    <Label className="text-slate-300">Oprema *</Label>
+                    <Label className="text-foreground">Oprema *</Label>
                     <Select 
                       value={form.asset_id} 
                       onValueChange={(v) => setForm({ ...form, asset_id: v })}
                       disabled={!!selectedDamagedAsset}
                     >
-                      <SelectTrigger className="bg-slate-900/80 border-slate-800 text-slate-200">
+                      <SelectTrigger className="bg-background border-input text-foreground">
                         <SelectValue placeholder="Izaberi opremu sa spiska..." />
                       </SelectTrigger>
                       <SelectContent>
                         {assets?.map((a) => (
                           <SelectItem key={a.id} value={a.id}>
-                            {a.name} <span className="text-slate-500">({a.code})</span>
+                            {a.name} <span className="text-muted-foreground">({a.code})</span>
                             {a.status === "damaged" && " [OŠTEĆENO]"}
                           </SelectItem>
                         ))}
@@ -344,9 +344,9 @@ export default function ServicePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-slate-300">Tip / Prioritet</Label>
+                    <Label className="text-foreground">Tip / Prioritet</Label>
                     <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                      <SelectTrigger className="bg-slate-900/80 border-slate-800 text-slate-200">
+                      <SelectTrigger className="bg-background border-input text-foreground">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -358,35 +358,35 @@ export default function ServicePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-slate-300">Opis Kvara / Problema</Label>
+                    <Label className="text-foreground">Opis Kvara / Problema</Label>
                     <Textarea 
                       rows={3} 
                       placeholder="Detaljan opis uočenog kvara ili potrebnih radova..." 
                       value={form.description} 
                       onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                      className="bg-slate-900/80 border-slate-800 text-slate-200"
+                      className="bg-background border-input text-foreground"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-slate-300">Serviser / Firma</Label>
+                      <Label className="text-foreground">Serviser / Firma</Label>
                       <Input 
                         placeholder="npr. Dragan Stanković" 
                         value={form.service_provider} 
                         onChange={(e) => setForm({ ...form, service_provider: e.target.value })} 
-                        className="bg-slate-900/80 border-slate-800 text-slate-200"
+                        className="bg-background border-input text-foreground"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-slate-300">Procena Troškova (RSD / €)</Label>
+                      <Label className="text-foreground">Procena Troškova (RSD / €)</Label>
                       <Input 
                         type="number" 
                         placeholder="npr. 450" 
                         value={form.cost} 
                         onChange={(e) => setForm({ ...form, cost: e.target.value })} 
-                        className="bg-slate-900/80 border-slate-800 text-slate-200"
+                        className="bg-background border-input text-foreground"
                       />
                     </div>
                   </div>
@@ -408,36 +408,36 @@ export default function ServicePage() {
         {/* Tabs & Main Content */}
         <Tabs defaultValue={damagedAssets && damagedAssets.length > 0 ? "damaged-assets" : "service-records"} className="space-y-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <TabsList className="bg-slate-900/80 border border-slate-800 p-1 flex-wrap">
-              <TabsTrigger value="damaged-assets" className="data-[state=active]:bg-amber-950/80 data-[state=active]:text-amber-300 relative">
+            <TabsList className="bg-muted border border-border p-1 flex-wrap">
+              <TabsTrigger value="damaged-assets" className="data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 dark:data-[state=active]:bg-amber-950/80 dark:data-[state=active]:text-amber-300 relative">
                 Oštećena Oprema 
                 {damagedAssets && damagedAssets.length > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-xs animate-pulse">
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-bold text-xs">
                     {damagedAssets.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="service-records" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+              <TabsTrigger value="service-records" className="data-[state=active]:bg-card data-[state=active]:text-foreground">
                 Evidencija Servisa
               </TabsTrigger>
-              <TabsTrigger value="damage-reports" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+              <TabsTrigger value="damage-reports" className="data-[state=active]:bg-card data-[state=active]:text-foreground">
                 Prijave Oštećenja
               </TabsTrigger>
             </TabsList>
 
             <div className="flex items-center gap-3">
               <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Pretraži kvarove, servise..."
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  className="pl-9 bg-slate-900/80 border-slate-800 text-slate-200 text-sm h-9"
+                  className="pl-9 bg-card border-input text-foreground text-sm h-9 shadow-xs"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-36 bg-slate-900/80 border-slate-800 text-slate-300 text-xs h-9">
-                  <Filter className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                <SelectTrigger className="w-36 bg-card border-input text-foreground text-xs h-9 shadow-xs">
+                  <Filter className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
                   <SelectValue placeholder="Svi Statusi" />
                 </SelectTrigger>
                 <SelectContent>
@@ -452,14 +452,14 @@ export default function ServicePage() {
 
           {/* TAB 1: Oštećena Oprema za Procenu */}
           <TabsContent value="damaged-assets" className="space-y-4">
-            <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
-                  <AlertTriangle className="h-6 w-6 text-amber-400" />
+                  <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-amber-200 text-base">Procena i Odluka o Oštećenoj Opremi</h3>
-                  <p className="text-xs text-amber-300/70 mt-0.5">
+                  <h3 className="font-bold text-amber-900 dark:text-amber-200 text-base">Procena i Odluka o Oštećenoj Opremi</h3>
+                  <p className="text-xs text-amber-800/80 dark:text-amber-300/70 mt-0.5">
                     Za svaki oštećeni komad opreme utvrdite stanje i odaberite: slanje na servis, komisiju za otpis (rashod), ili povratak u upotrebu.
                   </p>
                 </div>
@@ -467,44 +467,44 @@ export default function ServicePage() {
             </div>
 
             {damagedLoading ? (
-              <div className="py-16 text-center text-slate-500">Učitavanje oštećene opreme...</div>
+              <div className="py-16 text-center text-muted-foreground">Učitavanje oštećene opreme...</div>
             ) : !damagedAssets?.length ? (
-              <div className="py-16 text-center bg-[#151921] border border-slate-800/80 rounded-2xl">
+              <div className="py-16 text-center bg-card border border-border rounded-2xl shadow-xs">
                 <CheckCircle2 className="h-10 w-10 mx-auto text-emerald-500 mb-3 opacity-80" />
-                <h3 className="text-lg font-medium text-slate-200">Trenutno nema oštećene opreme</h3>
-                <p className="text-sm text-slate-400 mt-1">Sva oprema u magacinu je u ispravnom stanju.</p>
+                <h3 className="text-lg font-medium text-foreground">Trenutno nema oštećene opreme</h3>
+                <p className="text-sm text-muted-foreground mt-1">Sva oprema u magacinu je u ispravnom stanju.</p>
               </div>
             ) : (
               damagedAssets.map((asset) => {
                 const latestReport = asset.damage_reports?.[0];
                 return (
-                  <div key={asset.id} className="bg-[#151921] border border-amber-900/40 rounded-2xl p-5 md:p-6 shadow-xl text-slate-300 flex flex-col justify-between transition-all hover:border-amber-700/60">
+                  <div key={asset.id} className="bg-card border border-amber-200 dark:border-amber-900/40 rounded-2xl p-5 md:p-6 shadow-xs dark:shadow-xl text-card-foreground flex flex-col justify-between transition-all hover:border-amber-400">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-slate-100 text-lg tracking-tight">
+                        <h3 className="font-bold text-foreground text-lg tracking-tight">
                           {asset.name}
                         </h3>
-                        <span className="font-mono text-cyan-400 font-bold text-sm">
+                        <span className="font-mono text-cyan-600 dark:text-cyan-400 font-bold text-sm">
                           ({asset.code})
                         </span>
                         {asset.serial_number && (
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             SN: {asset.serial_number}
                           </span>
                         )}
                       </div>
 
-                      <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-950/80 border-amber-500/50 text-amber-300 flex items-center gap-2 w-fit">
-                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/80 dark:border-amber-500/50 dark:text-amber-300 flex items-center gap-2 w-fit">
+                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                         OŠTEĆENO
                       </span>
                     </div>
 
-                    <div className="bg-[#1A1F2A]/80 border border-slate-800/80 rounded-xl p-4 my-3 text-sm text-slate-300 leading-relaxed">
-                      <span className="font-semibold text-amber-400">Prijavljeno Oštećenje: </span>
+                    <div className="bg-muted/40 dark:bg-[#1A1F2A]/80 border border-border dark:border-slate-800/80 rounded-xl p-4 my-3 text-sm text-foreground leading-relaxed">
+                      <span className="font-semibold text-amber-700 dark:text-amber-400">Prijavljeno Oštećenje: </span>
                       {latestReport?.description || "Prijava oštećenja bez dodatnog tekstualnog opisa."}
                       {latestReport?.reported_at && (
-                        <div className="text-xs text-slate-500 mt-2">
+                        <div className="text-xs text-muted-foreground mt-2">
                           Prijavljeno: {formatDate(latestReport.reported_at)}
                         </div>
                       )}
@@ -570,12 +570,12 @@ export default function ServicePage() {
           {/* TAB 2: Evidencija Servisa */}
           <TabsContent value="service-records" className="space-y-4">
             {isLoading ? (
-              <div className="py-16 text-center text-slate-500">Učitavanje servisnih zapisa...</div>
+              <div className="py-16 text-center text-muted-foreground">Učitavanje servisnih zapisa...</div>
             ) : !filteredRecords.length ? (
-              <div className="py-16 text-center bg-[#151921] border border-slate-800/80 rounded-2xl">
-                <Wrench className="h-10 w-10 mx-auto text-slate-600 mb-3" />
-                <h3 className="text-lg font-medium text-slate-200">Nema servisnih zapisa</h3>
-                <p className="text-sm text-slate-400 mt-1">Trenutno nema prijavljenih kvarova ili servisa.</p>
+              <div className="py-16 text-center bg-card border border-border rounded-2xl shadow-xs">
+                <Wrench className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <h3 className="text-lg font-medium text-foreground">Nema servisnih zapisa</h3>
+                <p className="text-sm text-muted-foreground mt-1">Trenutno nema prijavljenih kvarova ili servisa.</p>
               </div>
             ) : (
               filteredRecords.map((r) => {
@@ -584,16 +584,16 @@ export default function ServicePage() {
                 const status = STATUS_MAP[r.status] ?? STATUS_MAP.reported;
 
                 return (
-                  <div key={r.id} className="bg-[#151921] border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl text-slate-300 flex flex-col justify-between transition-all hover:border-slate-700/80">
+                  <div key={r.id} className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-xs text-card-foreground flex flex-col justify-between transition-all hover:border-primary/40">
                     
                     {/* Header line */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-slate-100 text-lg tracking-tight">
+                        <h3 className="font-bold text-foreground text-lg tracking-tight">
                           {a?.name || "Nepoznata oprema"}
                         </h3>
                         {a?.code && (
-                          <span className="font-mono text-cyan-400 font-bold text-sm">
+                          <span className="font-mono text-cyan-600 dark:text-cyan-400 font-bold text-sm">
                             ({a.code})
                           </span>
                         )}
@@ -610,19 +610,19 @@ export default function ServicePage() {
                     </div>
 
                     {/* Subline */}
-                    <div className="text-xs text-slate-400 mb-3">
-                      Prijavio: <span className="text-slate-300">Operater</span> • Datum: <span className="text-slate-300">{formatDate(r.reported_at)}</span>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      Prijavio: <span className="text-foreground font-medium">Operater</span> • Datum: <span className="text-foreground font-medium">{formatDate(r.reported_at)}</span>
                     </div>
 
                     {/* Problem Description Box */}
-                    <div className="bg-[#1A1F2A]/80 border border-slate-800/80 rounded-xl p-4 my-1 text-sm text-slate-300 leading-relaxed">
-                      <span className="font-semibold text-slate-200">Opis Kvara / Problema: </span>
+                    <div className="bg-muted/40 dark:bg-[#1A1F2A]/80 border border-border dark:border-slate-800/80 rounded-xl p-4 my-1 text-sm text-foreground leading-relaxed">
+                      <span className="font-semibold text-foreground">Opis Kvara / Problema: </span>
                       {r.description || "Nema detaljnog opisa kvara."}
                       
                       {r.signed_urls && r.signed_urls.length > 0 && (
-                        <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-slate-800/50">
+                        <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-border">
                           {r.signed_urls.map((url, idx) => (
-                            <a key={idx} href={url} target="_blank" rel="noreferrer" className="block relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-slate-700 hover:border-cyan-500/50 hover:shadow-lg transition-all group">
+                            <a key={idx} href={url} target="_blank" rel="noreferrer" className="block relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-border hover:border-cyan-500/50 hover:shadow-lg transition-all group">
                               <img src={url} alt={`Oštećenje ${idx + 1}`} className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity" />
                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <Search className="h-4 w-4 text-white" />
@@ -634,14 +634,14 @@ export default function ServicePage() {
                     </div>
 
                     {/* Card Footer */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-2 border-t border-slate-800/40 text-xs">
-                      <div className="text-slate-400">
-                        Serviser: <span className="text-slate-200 font-medium">{r.service_provider || "Dodeljen serviseru"}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-2 border-t border-border text-xs text-muted-foreground">
+                      <div>
+                        Serviser: <span className="text-foreground font-medium">{r.service_provider || "Dodeljen serviseru"}</span>
                       </div>
 
                       <div className="flex items-center gap-4 shrink-0">
-                        <div className="text-slate-400">
-                          Procena Troškova: <span className="text-slate-100 font-bold text-sm">
+                        <div>
+                          Procena Troškova: <span className="text-foreground font-bold text-sm">
                             {r.cost != null ? (r.cost < 10000 ? `€${r.cost}` : formatRSD(r.cost)) : "N/A"}
                           </span>
                         </div>

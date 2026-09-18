@@ -199,8 +199,8 @@ export default function Home() {
           
           <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 text-xs font-semibold tracking-wide backdrop-blur-sm">
-                <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:bg-emerald-950/60 dark:border-emerald-800/50 dark:text-emerald-400 text-xs font-semibold tracking-wide backdrop-blur-sm">
+                <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-600 dark:text-emerald-400" />
                 <span>UŽIVO • SISTEM AKTIVAN</span>
               </div>
               
@@ -518,19 +518,19 @@ function RecentList({ items }: { items: Array<{ id: string; asset_id: string; ch
           <li key={c.id}>
             <Link
               to={`/assets/${c.asset_id}`}
-              className="flex items-center justify-between gap-3 rounded-xl bg-[#1A1F2A] border border-slate-800/80 p-3 hover:border-cyan-500/40 transition"
+              className="flex items-center justify-between gap-3 rounded-xl bg-card border border-border p-3 hover:border-cyan-500/40 hover:shadow-xs transition"
             >
               <div className="min-w-0 flex-1">
-                <div className="font-bold text-sm text-slate-200 truncate">{c.assets?.name ?? "—"}</div>
-                <div className="text-xs text-slate-400 truncate font-mono mt-0.5">
-                  <span className="text-cyan-400 font-semibold">{c.assets?.code}</span> · {c.checked_out_to_name ?? "Nepoznato"}
+                <div className="font-bold text-sm text-foreground truncate">{c.assets?.name ?? "—"}</div>
+                <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
+                  <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{c.assets?.code}</span> · {c.checked_out_to_name ?? "Nepoznato"}
                 </div>
               </div>
               <span
                 className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
                   returned 
-                    ? "bg-emerald-950/60 border-emerald-800/60 text-emerald-400" 
-                    : "bg-blue-950/60 border-blue-800/60 text-blue-400"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800/60 dark:text-emerald-400" 
+                    : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:border-blue-800/60 dark:text-blue-400"
                 }`}
               >
                 {returned ? "VRAĆENO" : "ZADUŽENO"}
@@ -559,20 +559,20 @@ function QuickActionCard({
   return (
     <Link
       to={to}
-      className="group flex flex-col justify-between rounded-2xl bg-[#151921] border border-slate-800/80 p-4 hover:border-cyan-500/40 hover:-translate-y-0.5 transition-all shadow-xl"
+      className="group flex flex-col justify-between rounded-2xl bg-card border border-border p-4 hover:border-cyan-500/40 hover:-translate-y-0.5 transition-all shadow-xs hover:shadow-md"
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`p-2.5 rounded-xl border ${iconBg}`}>
           <Icon className="h-4 w-4" />
         </div>
-        <ArrowUpRight className="h-4 w-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-cyan-600 dark:group-hover:text-cyan-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
       </div>
 
       <div>
-        <div className="font-bold text-sm text-slate-100 group-hover:text-cyan-400 transition-colors">
+        <div className="font-bold text-sm text-foreground group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
           {label}
         </div>
-        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
           {desc}
         </div>
       </div>

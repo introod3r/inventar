@@ -59,13 +59,13 @@ const STATUS_LABELS: Record<string, string> = {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#151921]/95 border border-slate-700/60 p-3 rounded-xl shadow-xl backdrop-blur-md">
-        <p className="text-slate-200 font-semibold mb-2">{label || payload[0]?.name}</p>
+      <div className="bg-popover/95 border border-border p-3 rounded-xl shadow-xl backdrop-blur-md text-popover-foreground">
+        <p className="font-semibold mb-2">{label || payload[0]?.name}</p>
         {payload.map((p: any, i: number) => (
           <div key={i} className="flex items-center gap-2 text-sm">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
-            <span className="text-slate-300">{p.name}:</span>
-            <span className="font-bold text-white">{p.value}</span>
+            <span className="text-muted-foreground">{p.name}:</span>
+            <span className="font-bold text-foreground">{p.value}</span>
           </div>
         ))}
       </div>
@@ -238,10 +238,10 @@ export default function Reports() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="glass-card border-slate-800/60 overflow-hidden">
-          <CardHeader className="bg-slate-900/40 border-b border-slate-800/40 pb-4">
+        <Card className="glass-card overflow-hidden">
+          <CardHeader className="bg-muted/40 border-b border-border pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <PieChartIcon className="h-4 w-4 text-emerald-400" /> Stanje opreme po statusu
+              <PieChartIcon className="h-4 w-4 text-emerald-500" /> Stanje opreme po statusu
             </CardTitle>
           </CardHeader>
           <CardContent className="h-85 pt-6 pb-2">
@@ -262,25 +262,25 @@ export default function Reports() {
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-slate-800/60 overflow-hidden">
-          <CardHeader className="bg-slate-900/40 border-b border-slate-800/40 pb-4">
+        <Card className="glass-card overflow-hidden">
+          <CardHeader className="bg-muted/40 border-b border-border pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="h-4 w-4 text-cyan-400" /> Zaduženja i razduženja (30 dana)
+              <Activity className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Zaduženja i razduženja (30 dana)
             </CardTitle>
           </CardHeader>
           <CardContent className="h-85 pt-6 pb-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={checkoutData ?? []} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-slate-200 dark:stroke-slate-800" />
                 <XAxis dataKey="date" fontSize={11} stroke="#64748b" tickLine={false} axisLine={false} />
                 <YAxis fontSize={11} allowDecimals={false} stroke="#64748b" tickLine={false} axisLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#334155', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Line type="monotone" dataKey="out" name="Zaduženo" stroke="#06b6d4" strokeWidth={3} dot={{ r: 3, fill: '#06b6d4', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                 <Line type="monotone" dataKey="in" name="Vraćeno" stroke="#10b981" strokeWidth={3} dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
@@ -289,10 +289,10 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-slate-800/60 overflow-hidden lg:col-span-2">
-          <CardHeader className="bg-slate-900/40 border-b border-slate-800/40 pb-4">
+        <Card className="glass-card overflow-hidden lg:col-span-2">
+          <CardHeader className="bg-muted/40 border-b border-border pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-blue-400" /> Top 10 najkorišćenije opreme
+              <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Top 10 najkorišćenije opreme
             </CardTitle>
           </CardHeader>
           <CardContent className="h-95 pt-6 pb-2">

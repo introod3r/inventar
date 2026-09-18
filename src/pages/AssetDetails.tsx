@@ -26,14 +26,14 @@ import { PrintQrDialog } from "@/components/assets/PrintQrDialog";
 type AssetStatus = Database["public"]["Enums"]["asset_status"];
 
 const STATUS_CONFIG: Record<AssetStatus, { label: string; dot: string; text: string; bg: string }> = {
-  available: { label: "DOSTUPNO", dot: "bg-emerald-400", text: "text-emerald-400", bg: "bg-emerald-950/80 border-emerald-500/40 text-emerald-300" },
-  at_event: { label: "NA DOGAĐAJU", dot: "bg-blue-400", text: "text-blue-400", bg: "bg-blue-950/80 border-blue-500/40 text-blue-300" },
-  in_service: { label: "NA SERVISU", dot: "bg-rose-400", text: "text-rose-400", bg: "bg-rose-950/80 border-rose-500/40 text-rose-300" },
-  in_transit: { label: "U TRANSPORTU", dot: "bg-purple-400", text: "text-purple-400", bg: "bg-purple-950/80 border-purple-500/40 text-purple-300" },
-  damaged: { label: "OŠTEĆENO", dot: "bg-amber-400", text: "text-amber-400", bg: "bg-amber-950/80 border-amber-500/40 text-amber-300" },
-  reserved: { label: "REZERVISANO", dot: "bg-sky-400", text: "text-sky-400", bg: "bg-sky-950/80 border-sky-500/40 text-sky-300" },
-  returned: { label: "VRAĆENO", dot: "bg-teal-400", text: "text-teal-400", bg: "bg-teal-950/80 border-teal-500/40 text-teal-300" },
-  written_off: { label: "RASHODOVANO", dot: "bg-slate-400", text: "text-slate-400", bg: "bg-slate-900/80 border-slate-700/40 text-slate-300" },
+  available: { label: "DOSTUPNO", dot: "bg-emerald-500 dark:bg-emerald-400", text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-500/40 dark:text-emerald-300" },
+  at_event: { label: "NA DOGAĐAJU", dot: "bg-blue-500 dark:bg-blue-400", text: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/80 dark:border-blue-500/40 dark:text-blue-300" },
+  in_service: { label: "NA SERVISU", dot: "bg-rose-500 dark:bg-rose-400", text: "text-rose-700 dark:text-rose-400", bg: "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/80 dark:border-rose-500/40 dark:text-rose-300" },
+  in_transit: { label: "U TRANSPORTU", dot: "bg-purple-500 dark:bg-purple-400", text: "text-purple-700 dark:text-purple-400", bg: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/80 dark:border-purple-500/40 dark:text-purple-300" },
+  damaged: { label: "OŠTEĆENO", dot: "bg-amber-500 dark:bg-amber-400", text: "text-amber-800 dark:text-amber-400", bg: "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/80 dark:border-amber-500/40 dark:text-amber-300" },
+  reserved: { label: "REZERVISANO", dot: "bg-sky-500 dark:bg-sky-400", text: "text-sky-700 dark:text-sky-400", bg: "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/80 dark:border-sky-500/40 dark:text-sky-300" },
+  returned: { label: "VRAĆENO", dot: "bg-teal-500 dark:bg-teal-400", text: "text-teal-700 dark:text-teal-400", bg: "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/80 dark:border-teal-500/40 dark:text-teal-300" },
+  written_off: { label: "RASHODOVANO", dot: "bg-slate-400", text: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900/80 dark:border-slate-700/40 dark:text-slate-300" },
 };
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -324,7 +324,7 @@ export default function AssetDetails() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Select value={newLocationId} onValueChange={setNewLocationId}>
-                  <SelectTrigger className="flex-1 bg-slate-900 border-slate-700 text-sm">
+                  <SelectTrigger className="flex-1 bg-background border-input text-foreground text-sm shadow-xs">
                     <SelectValue placeholder="-- Izaberi novu lokaciju ili magacin --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -334,7 +334,7 @@ export default function AssetDetails() {
                   </SelectContent>
                 </Select>
                 <Button 
-                  className="bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/50 border border-cyan-800 shrink-0"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-900/40 dark:text-cyan-300 dark:hover:bg-cyan-800/50 dark:border-cyan-800 shrink-0 shadow-xs"
                   onClick={() => moveAsset.mutate(newLocationId)}
                   disabled={!newLocationId || moveAsset.isPending}
                 >
