@@ -24,7 +24,10 @@ function parseContacts(contactStr: string | null, phoneStr: string | null): Cont
   if (contactStr.trim().startsWith('[')) {
     try {
       return JSON.parse(contactStr);
-    } catch (e) {}
+    } catch {
+      // ignore JSON parse error and fallback below
+    }
+
   }
   return [{ name: contactStr, phone: phoneStr || "" }];
 }

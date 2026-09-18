@@ -1,20 +1,10 @@
 import { Badge } from "@/components/ui/badge";
-import type { Database } from "@/integrations/supabase/types";
+import { ASSET_STATUS_LABEL, type AssetStatus } from "@/lib/status";
 
-type AssetStatus = Database["public"]["Enums"]["asset_status"];
-
-export const ASSET_STATUS_LABEL: Record<AssetStatus, string> = {
-  available: "Dostupno",
-  reserved: "Rezervisano",
-  at_event: "Na događaju",
-  in_transit: "U transportu",
-  returned: "Vraćeno",
-  damaged: "Oštećeno",
-  in_service: "Na servisu",
-  written_off: "Rashodovano",
-};
+export { ASSET_STATUS_LABEL };
 
 const LABEL = ASSET_STATUS_LABEL;
+
 
 
 const VARIANT: Record<AssetStatus, string> = {

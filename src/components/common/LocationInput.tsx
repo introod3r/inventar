@@ -36,10 +36,11 @@ export function LocationInput({ value, onChange, placeholder = "Unesite lokaciju
 
   // Sync external value changes
   useEffect(() => {
-    if (value !== query && !open) {
+    if (!open) {
       setQuery(value);
     }
-  }, [value]);
+  }, [value, open]);
+
 
   // Click outside listener
   useEffect(() => {

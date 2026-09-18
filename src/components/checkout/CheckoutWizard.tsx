@@ -151,7 +151,9 @@ export function CheckoutWizard({ open, onOpenChange, prefillEventId, prefillAsse
     let parsed: { name: string, phone: string }[] = [];
     if (client.contact) {
       if (client.contact.startsWith('[')) {
-        try { parsed = JSON.parse(client.contact); } catch(e) {}
+        try { parsed = JSON.parse(client.contact); } catch {
+          // ignore invalid JSON
+        }
       } else {
         parsed = [{ name: client.contact, phone: client.phone || "" }];
       }
@@ -273,7 +275,9 @@ export function CheckoutWizard({ open, onOpenChange, prefillEventId, prefillAsse
             const contactStr = extClient.contact;
             if (contactStr) {
                if (contactStr.trim().startsWith('[')) {
-                 try { parsedContacts = JSON.parse(contactStr); } catch (e) {}
+                  try { parsedContacts = JSON.parse(contactStr); } catch {
+                    // ignore invalid JSON
+                  }
                } else {
                  parsedContacts = [{ name: contactStr, phone: extClient.phone || "" }];
                }

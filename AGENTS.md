@@ -1,0 +1,103 @@
+# AGENTS.md — Inventar Application Architecture & Agent Guide
+
+> **Svrha:** Ovaj dokument služi kao trajna memorija i arhitektonska referenca za sve AI asistente (Antigravity/Gemini) koji rade na projektu **Inventar**.
+
+---
+
+## 1. Pregled Projekta
+**Inventar** je moderna, PWA-spremna web aplikacija za praćenje, iznajmljivanje, zaduživanje i servisiranje tehničke opreme za događaje (audio, video, rasveta, bina, kablovi i prateća oprema).
+
+---
+
+## 2. Tehnološki Stack
+* **Frontend:** [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Vite 8](https://vite.dev/) (sa Rolldown bundlerom i `vite-plugin-mkcert` za lokalni HTTPS).
+* **Styling & UI:** [Tailwind CSS v4](https://tailwindcss.com/), Radix UI primitives, Lucide React ikonice, Sonner (toast notifikacije).
+* **State & Data Fetching:** [Zustand](https://zustand-demo.pmnd.rs/) (lokalno stanje i korpa za skeniranje), [TanStack React Query v5](https://tanstack.com/query/latest) (serverski keš i sinhronizacija).
+* **Baza i Autentifikacija:** [Supabase](https://supabase.com/) (`@supabase/supabase-js`, PostgreSQL, RLS permisije, storage).
+* **PWA & Offline:** `vite-plugin-pwa`, `dexie` (IndexedDB offline red čekanja i sinhronizacija), `localforage`.
+* **Barkod & QR Scanner:** `@zxing/browser`, `@zxing/library`, Web Audio API + Haptic Vibration API za zvučnu potvrdu skeniranja.
+* **PDF & Dokumenti:** `pdf-lib` (automatsko generisanje reversa sa digitalnim potpisom, lazy-loaded).
+* **Mape & Grafikoni:** `leaflet`, `react-leaflet`, `recharts`.
+
+---
+
+## 3. Struktura Direktorijuma
+```
+inventar/
+├── src/
+│   ├── app/                 # Aplikativne konfiguracije
+│   ├── assets/              # Statički resursi (slike, logoi)
+│   ├── components/
+│   │   ├── assets/          # Prikaz slika opreme, prijave oštećenja, uvoz CSV-a
+│   │   ├── checkout/        # Čarobnjaci za zaduživanje/razduživanje, digitalni potpis
+│   │   ├── common/          # StatusBadge, CommandPalette, ErrorBoundary, PageLoader, LocationInput
+│   │   ├── layout/          # AppShell, PageHeader, navigacija
+│   │   ├── scanner/         # CameraScanner sa autofokusom, baterijom (torch) i zoom-om
+│   │   └── ui/              # Radix UI bazne komponente (Button, Dialog, Card, Input...)
+│   ├── features/
+│   │   ├── auth/            # AuthProvider, useAuth (Supabase session)
+│   │   ├── cart/            # useScanCart (korpa za brzo zaduživanje skeniranih stavki)
+│   │   ├── offline/         # Dexie DB (db.ts) i sync red (queue.ts)
+│   │   ├── rbac/            # permissions.ts (kontrola pristupa na osnovu uloga)
+│   │   └── theme/           # useTheme (tamna / svetla tema)
+│   ├── integrations/
+│   │   └── supabase/        # Supabase klijent i generisani Database tipovi
+│   ├── lib/
+│   │   ├── sound.ts         # Zvučni (Web Audio) i haptički fidbek za skener
+│   │   ├── status.ts        # Mapiranja i konstante statusa opreme
+│   │   ├── revers-pdf.ts    # Kreiranje PDF reversa sa potpisom i stavkama
+│   │   ├── qr-print.ts      # Priprema i štampa QR nalepnica za opremu
+│   │   ├── calculations.ts  # Matematički proračuni amortizacije i vrednosti
+│   │   └── csv.ts           # CSV uvoz i izvoz
+│   ├── pages/               # Sve stranice (Lazy loaded u App.tsx)
+│   ├── App.tsx              # Rute sa Code-Splittingom (React.lazy + Suspense)
+│   └── main.tsx             # React DOM root render
+├── supabase_schema.sql      # Glavna SQL šema sa tabelama i funkcijama
+├── supabase_role_permissions.sql # RLS i RBAC uloge
+└── vite.config.ts           # Vite konfiguracija sa PWA, mkcert i manualChunks
+```
+
+---
+
+## 4. Ključni Tokovi Podataka (Workflows)
+
+### A. Životni Ciklus Opreme (Asset Lifecycle)
+Statusi definisani u `src/lib/status.ts`:
+- `available` (Dostupno u magacinu)
+- `reserved` (Rezervisano za predstojeći događaj)
+- `at_event` (Na terenu / događaju)
+- `in_transit` (U transportu)
+- `returned` (Vraćeno, čeka pregled)
+- `damaged` (Prijavljeno oštećenje / polomljeno)
+- `in_service` (Poslato na servis/popravku)
+- `written_off` (Rashodovano)
+
+### B. Zaduživanje i Razduživanje (Checkout / Revers)
+- Putanja: `/checkouts` i `CheckoutWizard.tsx`.
+- Koraci:
+  1. Izbor događaja (Event) ili klijenta (Client).
+  2. Izbor opreme (pojedinačno ili skeniranjem barkoda/QR koda).
+  3. Preuzimalac (odgovorno lice i kontakt).
+  4. Digitalni potpis na ekranu (`SignaturePad.tsx`).
+  5. Kreiranje zaduženja u bazi + generisanje PDF reversa (`revers-pdf.ts`).
+
+### C. Brzo Skeniranje (Scanner)
+- Putanja: `/scan` i `src/components/scanner/CameraScanner.tsx`.
+- Podržava:
+  - Mobilnu kameru sa autofokusom na dodir ekrana.
+  - Bateriju/blic (`torch`) za tamne magacine.
+  - Hardverski zoom.
+  - Zvučni bip (`playScanSuccess`) i vibraciju na mobilnom uređaju čim se kod očita.
+  - Zvučni ton upozorenja (`playScanError`) ako artikla nema u bazi.
+  - Korpu skeniranih stavki za grupno zaduživanje.
+
+### D. Offline Rad (PWA & Queue)
+- Kada nema interneta, operacije se beleže u lokalni `IndexedDB` preko `src/features/offline/queue.ts`.
+- Čim se uređaj ponovo poveže na mrežu (`navigator.onLine`), red se automatski prazni i sinhronizuje sa Supabase bazom.
+
+---
+
+## 5. Razvoj i Verifikacija
+* **Dev Server:** `npm run dev` (pokreće se na `https://localhost:5173/` uz mkcert HTTPS).
+* **Build:** `npm run build` (vrši `tsc -b` tipsku proveru i Vite/Rolldown optimizovano pakovanje u podeljene chunk-ove).
+* **Linter:** `npm run lint` (`oxlint` za instant analizu koda).

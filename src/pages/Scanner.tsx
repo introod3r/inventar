@@ -13,6 +13,7 @@ import { AssetStatusBadge } from "@/components/common/StatusBadge";
 import { toast } from "sonner";
 import { useScanCart } from "@/features/cart/use-scan-cart";
 import { BulkCheckoutDialog } from "@/components/checkout/BulkCheckoutDialog";
+import { playScanError } from "@/lib/sound";
 
 type Asset = Database["public"]["Tables"]["assets"]["Row"];
 
@@ -39,6 +40,7 @@ export default function ScanPage() {
       if (error) throw error;
       if (!data) {
         setResult({ asset: null, notFound: r.code });
+        playScanError();
       } else {
         setResult({ asset: data });
         toast.success(`Prepoznato: ${data.name}`);

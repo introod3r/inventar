@@ -45,7 +45,22 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/recharts')) return 'vendor-charts';
+          if (id.includes('node_modules/leaflet') || id.includes('node_modules/react-leaflet')) return 'vendor-maps';
+          if (id.includes('node_modules/@zxing')) return 'vendor-scanner';
+          if (id.includes('node_modules/@supabase')) return 'vendor-supabase';
+        },
+      },
     },
   },
 })
+
+

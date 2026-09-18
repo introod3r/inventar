@@ -1,35 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-
-import Home from '@/pages/Home';
-import Scanner from '@/pages/Scanner';
-import Inventory from '@/pages/Inventory';
-import AssetDetails from '@/pages/AssetDetails';
-import AssetEdit from '@/pages/AssetEdit';
-import AssetNew from '@/pages/AssetNew';
-
-import Events from '@/pages/Events';
-import EventDetails from '@/pages/EventDetails';
-import EventNew from '@/pages/EventNew';
-
-import Locations from '@/pages/Locations';
-import Service from '@/pages/Service';
-import Checkouts from '@/pages/Checkouts';
-import Login from '@/pages/Login';
-
-import Calendar from '@/pages/Calendar';
-import Clients from '@/pages/Clients';
-import Reports from '@/pages/Reports';
-import Inventories from '@/pages/Inventories';
-import InventoryDetails from '@/pages/InventoryDetails';
-
-import SettingsApiKeys from '@/pages/SettingsApiKeys';
-import SettingsAuditLog from '@/pages/SettingsAuditLog';
-import SettingsBackup from '@/pages/SettingsBackup';
-import SettingsCategories from '@/pages/SettingsCategories';
-import SettingsUsers from '@/pages/SettingsUsers';
-import SettingsRolePermissions from '@/pages/SettingsRolePermissions';
 
 import { ThemeProvider } from '@/features/theme/use-theme';
 import { AuthProvider } from '@/features/auth/use-auth';
@@ -38,10 +10,43 @@ import { AppShell } from '@/components/layout/AppShell';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { PageLoader } from '@/components/common/PageLoader';
+
+// Lazy load page components for route-based code splitting
+const Home = lazy(() => import('@/pages/Home'));
+const Scanner = lazy(() => import('@/pages/Scanner'));
+const Inventory = lazy(() => import('@/pages/Inventory'));
+const AssetDetails = lazy(() => import('@/pages/AssetDetails'));
+const AssetEdit = lazy(() => import('@/pages/AssetEdit'));
+const AssetNew = lazy(() => import('@/pages/AssetNew'));
+
+const Events = lazy(() => import('@/pages/Events'));
+const EventDetails = lazy(() => import('@/pages/EventDetails'));
+const EventNew = lazy(() => import('@/pages/EventNew'));
+
+const Locations = lazy(() => import('@/pages/Locations'));
+const Service = lazy(() => import('@/pages/Service'));
+const Checkouts = lazy(() => import('@/pages/Checkouts'));
+const Login = lazy(() => import('@/pages/Login'));
+
+const Calendar = lazy(() => import('@/pages/Calendar'));
+const Clients = lazy(() => import('@/pages/Clients'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Inventories = lazy(() => import('@/pages/Inventories'));
+const InventoryDetails = lazy(() => import('@/pages/InventoryDetails'));
+
+const SettingsApiKeys = lazy(() => import('@/pages/SettingsApiKeys'));
+const SettingsAuditLog = lazy(() => import('@/pages/SettingsAuditLog'));
+const SettingsBackup = lazy(() => import('@/pages/SettingsBackup'));
+const SettingsCategories = lazy(() => import('@/pages/SettingsCategories'));
+const SettingsUsers = lazy(() => import('@/pages/SettingsUsers'));
+const SettingsRolePermissions = lazy(() => import('@/pages/SettingsRolePermissions'));
 
 const LayoutWrapper = () => (
   <AppShell>
-    <Outlet />
+    <Suspense fallback={<PageLoader />}>
+      <Outlet />
+    </Suspense>
     <PWAInstallPrompt />
   </AppShell>
 );
@@ -57,7 +62,14 @@ function App() {
           <TooltipProvider delayDuration={150}>
             <BrowserRouter>
               <Routes>
-                <Route path="/login" element={<Login />} />
+                <Route
+                  path="/login"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Login />
+                    </Suspense>
+                  }
+                />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/" element={<LayoutWrapper />}>
                     <Route index element={<Home />} />
@@ -108,3 +120,4 @@ function App() {
 }
 
 export default App;
+

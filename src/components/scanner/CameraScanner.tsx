@@ -4,6 +4,7 @@ import { DecodeHintType, BarcodeFormat } from "@zxing/library";
 import { Camera, CameraOff, Keyboard, RefreshCw, Zap, ZapOff, Focus, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { playScanSuccess } from "@/lib/sound";
 
 export type ScanResult = { code: string; format?: string };
 
@@ -203,7 +204,10 @@ export function CameraScanner({
           (result) => {
             if (result) {
               const text = result.getText();
-              if (text) onScan({ code: text, format: result.getBarcodeFormat()?.toString() });
+              if (text) {
+                playScanSuccess();
+                onScan({ code: text, format: result.getBarcodeFormat()?.toString() });
+              }
             }
           }
         );
