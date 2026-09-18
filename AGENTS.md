@@ -81,15 +81,27 @@ Statusi definisani u `src/lib/status.ts`:
   4. Digitalni potpis na ekranu (`SignaturePad.tsx`).
   5. Kreiranje zaduženja u bazi + generisanje PDF reversa (`revers-pdf.ts`).
 
-### C. Brzo Skeniranje (Scanner)
-- Putanja: `/scan` i `src/components/scanner/CameraScanner.tsx`.
-- Podržava:
-  - Mobilnu kameru sa autofokusom na dodir ekrana.
-  - Bateriju/blic (`torch`) za tamne magacine.
-  - Hardverski zoom.
-  - Zvučni bip (`playScanSuccess`) i vibraciju na mobilnom uređaju čim se kod očita.
-  - Zvučni ton upozorenja (`playScanError`) ako artikla nema u bazi.
-  - Korpu skeniranih stavki za grupno zaduživanje.
+### C. Brzo Skeniranje Opreme (Scanner & Mobile Camera Engine)
+- Putanja: `/scan`, `src/pages/Scanner.tsx`, `src/components/scanner/CameraScanner.tsx`, `src/components/scanner/QuickStatusModal.tsx`.
+- Arhitektura skenera:
+  - **Hibridni engine za dekodiranje:**
+    - Primarni: Native `BarcodeDetector` API (Google Play Services ML Kit na Androidu, Apple Vision framework na iOS 17+) za 60fps GPU/NPU detekciju bez opterećenja procesora.
+    - Fallback: `@zxing/browser` (`BrowserMultiFormatReader`) za univerzalnu podršku na svim desktop i starijim pregledačima.
+  - **Maksimalno hardversko fokusiranje mobilne kamere:**
+    - Kontinualni autofokus (`focusMode: "continuous"`), ekspozicija i balans bele.
+    - **Tap-to-Focus**: Proračun relativnih koordinata dodira na video vizir, slanje `pointsOfInterest: [{ x, y }]` i ISP pulsno refokusiranje (`single-shot` -> `continuous`).
+    - Animacija HUD fokusnog prstena (zeleni pulsajući nišan na mestu dodira).
+    - **Makro fokus asistencija:** Automatski fokus na maloj udaljenosti (3–10 cm) uz optičko/digitalno uvećanje za sitne nalepnice i kablove.
+    - **Pinch-to-zoom i brza dugmad za zum:** Dvoprsti gest na ekranu + prečice `1x`, `1.5x`, `2x`, `3x`.
+    - **Blic / Lampa (Torch):** Uočljivo dugme sa svetlosnim indikatorom za mračne magacine i bekstejdž.
+    - **Pametni izbor i rotacija sočiva (Camera Switcher):** Prioritizuje primarno zadnje sočivo umesto ultra-širokog sočiva sa fiksnim fokusom, uz 1-klik dugme za promenu kamere.
+  - **Dva radna režima rada u magacinu:**
+    1. *„Serijsko u korpu” (Batch Mode):* Magacioner skenira artikal za artiklom bez dodirivanja ekrana — svaki kod proverava bazu, dodaje u korpu za zaduženje uz zvučni bip i haptičku vibraciju, dok kamera ostaje neprekidno aktivna.
+    2. *„Pojedinačni pregled” (Inspect Mode):* Karton artikla (slika, lokacija, kategorija, status) sa brzim akcijama: zaduženje, promena statusa na licu mesta (`QuickStatusModal`), dodavanje u korpu ili otvaranje kartona opreme.
+  - **Hardverski USB / Bluetooth barkod laser listener (HID Keyboard Wedge):**
+    - Pozadinski listener koji hvata brze sekvence laserskih čitača (<50ms) i automatski obrađuje barkod bez potrebe za fokusom na tekstualno polje.
+  - **Istorija sesije:** Hronološki spisak svih očitanih stavki tokom rada sa mogućnošću CSV izvoza.
+  - **Plutajuća donja traka (Mobile Dock):** Brzi pristup korpi sa brojačem i zaduživanje cele korpe putem reversa sa potpisom (`BulkCheckoutDialog`).
 
 ### D. Offline Rad (PWA & Queue)
 - Kada nema interneta, operacije se beleže u lokalni `IndexedDB` preko `src/features/offline/queue.ts`.
