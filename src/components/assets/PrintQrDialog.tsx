@@ -526,7 +526,7 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
               </div>
 
               {/* Main Preview Frame */}
-              <div className="flex-1 min-h-[320px] bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 rounded-2xl border border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all">
+              <div className="flex-1 min-h-80 bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 rounded-2xl border border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all">
                 {/* Background Blueprint / Grid Pattern */}
                 <div
                   className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
