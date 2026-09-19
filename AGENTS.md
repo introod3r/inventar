@@ -189,10 +189,15 @@ Statusi definisani u `src/lib/status.ts`:
 ### K. Katalog Opreme & Masovne Operacije (Assets Catalog)
 - Putanja: `/assets`, `src/pages/Inventory.tsx`.
 - Podržava:
-  - Filter po Lokaciji usklađen sa URL `?location={id}` query parametrima.
-  - Brzu pretragu skeniranjem barkoda/QR koda direktno sa kamere uređaja (`CameraScanner`).
-  - Masovnu akciju premeštanja selektovane opreme na novu lokaciju (`BulkMoveDialog`).
-  - Masovno menjanje statusa i štampu QR nalepnica.
+  - **Filter po Lokaciji:** Usklađen sa URL `?location={id}` query parametrima.
+  - **Kamera skener u pretrazi:** Brza pretraga skeniranjem barkoda/QR koda direktno sa kamere uređaja (`CameraScanner`).
+  - **Masovne operacije:** Premeštanje selektovane opreme na novu lokaciju (`BulkMoveDialog`), promena statusa, štampa QR nalepnica i masovno dodavanje u korpu za izdavanje (`useScanCart`).
+  - **Horizontalni brzi status čipovi:** Touch-friendly traka sa brojačima artikala po svakom statusu u realnom vremenu.
+  - **KPI i rezime traka:** Prikaz broja filtriranih artikala od ukupnog broja i sumirane knjigovodstvene vrednosti.
+  - **Ergonomija i čiste kartice:** Uklonjen šum ponavljajućih placeholder opisa, dodat bedž kategorije, 36x36px touch checkbox sa zaštićenom navigacijom.
+  - **Meni brzih akcija (3-dots menu):** Na svakoj Grid kartici i u Tabeli: dodavanje u korpu za izdavanje, štampa QR nalepnice pojedinačnog artikla i kopiranje šifre u clipboard.
+  - **Alati i Izvoz padajući meni:** Čisto zaglavlje bez zagušenja na mobilnim uređajima, sa grupisanim akcijama štampe svih QR nalepnica, uvoza i izvoza CSV/XML.
+
 
 ### L. Izveštaji i Analitika (Reports & BI)
 - Putanja: `/reports`, `src/pages/Reports.tsx`.
