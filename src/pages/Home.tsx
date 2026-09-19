@@ -17,6 +17,9 @@ import {
   Plus,
   ArrowUpRight,
   Activity,
+  Undo2,
+  CalendarClock,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -129,6 +132,37 @@ export default function Home() {
         .limit(4); // Reduced limit slightly to accommodate larger cards
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const { data: todayOperations } = useQuery({
+    queryKey: ["dashboard-today-operations"],
+    queryFn: async () => {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+
+      const [outboundRes, returnsRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("id, name, start_at, end_at, status, location_text, clients:client_id(name)")
+          .gte("start_at", startOfDay)
+          .lte("start_at", endOfDay)
+          .in("status", ["confirmed", "in_progress", "draft"])
+          .order("start_at", { ascending: true }),
+        supabase
+          .from("checkouts")
+          .select("id, checked_out_to_name, expected_return_at, checked_out_at, assets:asset_id(code, name), events:event_id(name)")
+          .is("returned_at", null)
+          .lte("expected_return_at", endOfDay)
+          .order("expected_return_at", { ascending: true })
+          .limit(8),
+      ]);
+
+      return {
+        outbound: outboundRes.data ?? [],
+        returns: returnsRes.data ?? [],
+      };
     },
   });
 
@@ -288,6 +322,131 @@ export default function Home() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Danas u Magacinu: Operativni Raspored (Today's Dispatch & Returns Hub) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <CalendarClock className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" /> Danas u Magacinu: Operativni Raspored
+            </h2>
+            <span className="text-xs text-muted-foreground font-medium capitalize">
+              {new Date().toLocaleDateString("sr-RS", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Outbound Dispatches Today */}
+            <div className="rounded-2xl glass-card border border-blue-500/20 p-5 flex flex-col justify-between space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400">
+                    <CalendarRange className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">Polasci i Izdavanje Danas</h3>
+                    <p className="text-xs text-muted-foreground">Događaji planirani za polazak opreme</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                  {todayOperations?.outbound.length ?? 0}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {!todayOperations?.outbound.length ? (
+                  <div className="py-7 text-center text-xs text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
+                    Nema planiranih novih polazaka za danas.
+                  </div>
+                ) : (
+                  todayOperations.outbound.slice(0, 3).map((ev) => (
+                    <div key={ev.id} className="p-3 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-foreground truncate">{ev.name}</div>
+                        <div className="text-muted-foreground flex items-center gap-2 mt-0.5">
+                          {ev.clients && <span>{(ev.clients as any).name}</span>}
+                          {ev.location_text && (
+                            <span className="flex items-center gap-0.5 truncate">
+                              <MapPin className="h-3 w-3" /> {ev.location_text}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button asChild size="sm" variant="secondary" className="h-7 text-[11px] font-semibold">
+                        <Link to={`/events/${ev.id}`}>
+                          Detalji
+                        </Link>
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <Button asChild className="w-full h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs">
+                <Link to="/scan">
+                  <ScanLine className="mr-1.5 h-3.5 w-3.5" /> Pokreni Skeniranje Izdavanja
+                </Link>
+              </Button>
+            </div>
+
+            {/* Inbound Returns Due Today */}
+            <div className="rounded-2xl glass-card border border-emerald-500/20 p-5 flex flex-col justify-between space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    <Undo2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">Očekivani Povrati Danas</h3>
+                    <p className="text-xs text-muted-foreground">Rok povrata ističe danas ili je prekoračen</p>
+                  </div>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                  (todayOperations?.returns.length ?? 0) > 0
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                }`}>
+                  {todayOperations?.returns.length ?? 0}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {!todayOperations?.returns.length ? (
+                  <div className="py-7 text-center text-xs text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
+                    Sva oprema je uredno razdužena, nema zaostalih povrata.
+                  </div>
+                ) : (
+                  todayOperations.returns.slice(0, 3).map((ret) => {
+                    const isOverdue = ret.expected_return_at && new Date(ret.expected_return_at) < new Date();
+                    return (
+                      <div key={ret.id} className="p-3 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3 text-xs hover:border-emerald-500/40 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-foreground truncate">
+                            {(ret.assets as any)?.name || "Oprema"} <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400">({(ret.assets as any)?.code})</span>
+                          </div>
+                          <div className="text-muted-foreground flex items-center gap-2 mt-0.5">
+                            <span>Preuzeo: {ret.checked_out_to_name || "—"}</span>
+                            {isOverdue && (
+                              <span className="text-rose-600 dark:text-rose-400 font-bold px-1 rounded bg-rose-50 dark:bg-rose-950/40">KASNI</span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                          {ret.expected_return_at ? formatDateTime(ret.expected_return_at).split(" ")[1] : "Danas"}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <Button asChild className="w-full h-9 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs">
+                <Link to="/scan">
+                  <Undo2 className="mr-1.5 h-3.5 w-3.5" /> Pokreni Skeniranje Prijema
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Brze Akcije (Quick Actions Grid) */}

@@ -46,6 +46,8 @@ import { NotificationsBell } from "@/components/common/NotificationsBell";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { Search } from "lucide-react";
 
+import { useScanCart } from "@/features/cart/use-scan-cart";
+
 type NavItem = {
   to: string;
   label: string;
@@ -56,12 +58,12 @@ type NavItem = {
   bg?: string;
 };
 
-// Raspored u potpunosti prilagođen korisničkom dizajnu
+// Raspored u potpunosti prilagođen korisničkom dizajnu i toku rada magacina
 const NAV_DAILY: NavItem[] = [
   { to: "/dashboard", label: "Pregled", icon: LayoutDashboard, color: "text-sky-500 dark:text-sky-400", bg: "bg-sky-500/15" },
   { to: "/events", label: "Planiranje Događaja", icon: CalendarRange, color: "text-rose-500 dark:text-rose-400", bg: "bg-rose-500/15" },
-  { to: "/checkouts", label: "Izdavanje i Reversi", icon: Receipt, color: "text-purple-500 dark:text-purple-400", bg: "bg-purple-500/15" },
   { to: "/scan", label: "Skeniranje Opreme", icon: Camera, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-500/15" },
+  { to: "/checkouts", label: "Izdavanje i Reversi", icon: Receipt, color: "text-purple-500 dark:text-purple-400", bg: "bg-purple-500/15" },
   { to: "/service", label: "Servis i Popravke", icon: Wrench, color: "text-orange-500 dark:text-orange-400", bg: "bg-orange-500/15" },
 ];
 
@@ -78,6 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, user, signOut, hasPermission, roles } = useAuth();
   const { settings: companySettings } = useCompanySettings();
+  const { items: cartItems } = useScanCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -273,17 +276,22 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* 3. Center Camera Action Button */}
           <Link
             to="/scan"
-            className="flex flex-col items-center justify-center flex-1 -translate-y-3.5 group"
+            className="flex flex-col items-center justify-center flex-1 -translate-y-3.5 group relative"
             aria-label="Skener"
           >
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 relative ${
                 location.pathname === "/scan"
                   ? "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.45)] scale-105 ring-4 ring-background dark:ring-slate-950"
                   : "bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[0_6px_20px_rgba(37,99,235,0.35)] hover:scale-105 ring-4 ring-background dark:ring-slate-950"
               }`}
             >
               <Camera className="h-7 w-7 text-white stroke-2" />
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white font-bold text-[10px] min-w-5 h-5 px-1 rounded-full flex items-center justify-center border-2 border-background shadow-md animate-pulse">
+                  {cartItems.length}
+                </span>
+              )}
             </div>
           </Link>
 

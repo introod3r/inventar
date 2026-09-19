@@ -73,13 +73,15 @@ Statusi definisani u `src/lib/status.ts`:
 - `written_off` (Rashodovano)
 
 ### B. Zaduživanje i Razduživanje (Checkout / Revers)
-- Putanja: `/checkouts` i `CheckoutWizard.tsx`.
+- Putanja: `/checkouts`, `CheckoutWizard.tsx`, `ReturnWizard.tsx`, `CheckoutDialog.tsx`.
 - Koraci:
   1. Izbor događaja (Event) ili klijenta (Client).
   2. Izbor opreme (pojedinačno ili skeniranjem barkoda/QR koda).
   3. Preuzimalac (odgovorno lice i kontakt).
-  4. Digitalni potpis na ekranu (`SignaturePad.tsx`).
-  5. Kreiranje zaduženja u bazi + generisanje PDF reversa (`revers-pdf.ts`).
+  4. Digitalni potpis na ekranu (`SignaturePad.tsx`) sa podrškom za **Fullscreen / prošireni režim** za lakše potpisivanje prstom na telefonima.
+  5. Kreiranje zaduženja u bazi + generisanje PDF reversa (`revers-pdf.ts`) ili POS termalnog revers slipa.
+  6. **Pretraga i kamera skener:** Brza pretraga reversa unosom teksta ili klikom na ikonu kamere za direktno skeniranje QR koda sa papirnog/termalnog reversa.
+  7. **Zatvorena petlja oštećenja:** Prilikom razduživanja opreme sa statusom „Oštećeno”, sistem automatski kreira nalog za servis (`service_records`) i prijavu oštećenja (`damage_reports`) sa unetim opisom i slikama sa kamere.
 
 ### C. Brzo Skeniranje Opreme (Scanner & Mobile Camera Engine)
 - Putanja: `/scan`, `src/pages/Scanner.tsx`, `src/components/scanner/CameraScanner.tsx`, `src/components/scanner/QuickStatusModal.tsx`.
@@ -95,13 +97,14 @@ Statusi definisani u `src/lib/status.ts`:
     - **Pinch-to-zoom i brza dugmad za zum:** Dvoprsti gest na ekranu + prečice `1x`, `1.5x`, `2x`, `3x`.
     - **Blic / Lampa (Torch):** Uočljivo dugme sa svetlosnim indikatorom za mračne magacine i bekstejdž.
     - **Pametni izbor i rotacija sočiva (Camera Switcher):** Prioritizuje primarno zadnje sočivo umesto ultra-širokog sočiva sa fiksnim fokusom, uz 1-klik dugme za promenu kamere.
-  - **Dva radna režima rada u magacinu:**
-    1. *„Serijsko u korpu” (Batch Mode):* Magacioner skenira artikal za artiklom bez dodirivanja ekrana — svaki kod proverava bazu, dodaje u korpu za zaduženje uz zvučni bip i haptičku vibraciju, dok kamera ostaje neprekidno aktivna.
-    2. *„Pojedinačni pregled” (Inspect Mode):* Karton artikla (slika, lokacija, kategorija, status) sa brzim akcijama: zaduženje, promena statusa na licu mesta (`QuickStatusModal`), dodavanje u korpu ili otvaranje kartona opreme.
-  - **Hardverski USB / Bluetooth barkod laser listener (HID Keyboard Wedge):**
-    - Pozadinski listener koji hvata brze sekvence laserskih čitača (<50ms) i automatski obrađuje barkod bez potrebe za fokusom na tekstualno polje.
+    - **Štednja baterije (Power Saving Pause):** Automatsko pauziranje dekodiranja i video analize kada je otvoren bilo koji modal ili sheet dijalog.
+  - **Tri operativna režima rada u magacinu:**
+    1. *„Izdavanje (U korpu)” (Outbound Batch):* Magacioner serijski skenira artikle dok ih pakuje — svaki kod proverava bazu i dodaje u korpu za zaduženje uz zvučni bip i haptičku vibraciju, sa plutajućom trakom za masovno zaduženje jednim potpisom (`BulkCheckoutDialog`).
+    2. *„Prijem (Razduživanje)” (Inbound Check-in):* Skeniranje vraćene opreme automatski pronalazi aktivno zaduženje, prikazuje događaj, preuzimaoca i rok povrata, i nudi 1-tap instant razduživanje („Ispravno”) ili prijavu kvara („Oštećeno”) sa slanjem na servis. Opcioni prekidač za *1-sken auto prijem* omogućava instant razduživanje celog kombija za par sekundi.
+    3. *„Info / Karton” (Inspect Mode):* Prikaz kartona artikla (slika, lokacija, kategorija, status) sa promenom statusa na licu mesta (`QuickStatusModal`).
+  - **Prepoznavanje Revers QR Kodova:** Očitavanje koda koji počinje sa `REV-` automatski otvara dijalog reversa sa spiskom svih zaduženih stavki i opcijom za grupno razduživanje celog reversa odjednom.
+  - **Hardverski USB / Bluetooth barkod laser listener (HID Keyboard Wedge):** Pozadinski listener koji hvata brze sekvence laserskih čitača (<50ms) i automatski obrađuje barkod bez potrebe za fokusom na tekstualno polje.
   - **Istorija sesije:** Hronološki spisak svih očitanih stavki tokom rada sa mogućnošću CSV izvoza.
-  - **Plutajuća donja traka (Mobile Dock):** Brzi pristup korpi sa brojačem i zaduživanje cele korpe putem reversa sa potpisom (`BulkCheckoutDialog`).
 
 ### D. Offline Rad (PWA & Queue)
 - Kada nema interneta, operacije se beleže u lokalni `IndexedDB` preko `src/features/offline/queue.ts`.

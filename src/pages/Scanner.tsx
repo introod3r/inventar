@@ -2,12 +2,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { CameraScanner, type ScanResult } from "@/components/scanner/CameraScanner";
 import { QuickStatusModal } from "@/components/scanner/QuickStatusModal";
+import { DamageReportDialog } from "@/components/assets/DamageReportDialog";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -31,6 +39,9 @@ import {
   Tag,
   ArrowRight,
   Sparkles,
+  Undo2,
+  AlertTriangle,
+  Receipt,
 } from "lucide-react";
 import { AssetStatusBadge } from "@/components/common/StatusBadge";
 import { toast } from "sonner";
@@ -38,6 +49,7 @@ import { useScanCart } from "@/features/cart/use-scan-cart";
 import { BulkCheckoutDialog } from "@/components/checkout/BulkCheckoutDialog";
 import { playScanSuccess, playScanError } from "@/lib/sound";
 import { exportCsv } from "@/lib/csv";
+import { formatDateTime } from "@/lib/format";
 
 type AssetRow = Database["public"]["Tables"]["assets"]["Row"];
 
@@ -47,20 +59,52 @@ type ScannedAsset = AssetRow & {
   asset_photos?: { storage_path: string; is_primary: boolean }[];
 };
 
+type ActiveCheckoutInfo = {
+  id: string;
+  asset_id: string;
+  event_id: string | null;
+  checked_out_to_name: string | null;
+  checked_out_at: string;
+  expected_return_at: string | null;
+  condition_out: string | null;
+  notes: string | null;
+  events?: { id: string; name: string; clients?: { id: string; name: string } | null } | null;
+};
+
+type ScannedReversItem = {
+  checkoutId: string;
+  assetId: string;
+  code: string;
+  name: string;
+  serialNumber?: string | null;
+  returnedAt?: string | null;
+};
+
+type ScannedReversGroup = {
+  reversCode: string;
+  eventName?: string;
+  clientName?: string;
+  checkedOutTo?: string;
+  checkedOutAt?: string;
+  items: ScannedReversItem[];
+};
+
 type ScanHistoryItem = {
   id: string;
   code: string;
   timestamp: Date;
-  status: "found" | "not_found";
+  status: "found" | "not_found" | "revers" | "returned";
   asset?: ScannedAsset;
+  note?: string;
 };
 
 export default function ScanPage() {
   const navigate = useNavigate();
   const { items, add, remove, clear } = useScanCart();
 
-  // Scan Modes: 'single' (inspect item) | 'batch' (auto add to cart)
-  const [mode, setMode] = useState<"single" | "batch">("single");
+  // Scan Modes: 'batch' (Outbound dispatch / to cart) | 'return' (Inbound check-in) | 'single' (Inspect item)
+  const [mode, setMode] = useState<"batch" | "return" | "single">("batch");
+  const [autoReturnOk, setAutoReturnOk] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState<"result" | "cart" | "history">("result");
@@ -69,17 +113,79 @@ export default function ScanPage() {
   const [lastCode, setLastCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentAsset, setCurrentAsset] = useState<ScannedAsset | null>(null);
+  const [activeCheckout, setActiveCheckout] = useState<ActiveCheckoutInfo | null>(null);
   const [notFoundCode, setNotFoundCode] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
   const [history, setHistory] = useState<ScanHistoryItem[]>([]);
 
+  // Revers Scanning modal state
+  const [scannedRevers, setScannedRevers] = useState<ScannedReversGroup | null>(null);
+  const [reversBusy, setReversBusy] = useState(false);
+
   // Dialogs
   const [bulkOpen, setBulkOpen] = useState(false);
   const [statusModalAsset, setStatusModalAsset] = useState<ScannedAsset | null>(null);
+  const [damageModalAsset, setDamageModalAsset] = useState<{
+    id: string;
+    code: string;
+    name: string;
+    checkoutId?: string;
+  } | null>(null);
 
   // USB/Bluetooth Keyboard Wedge buffer
   const hidBufferRef = useRef<string>("");
   const hidLastTimeRef = useRef<number>(0);
+
+  // Instant or manual return helper
+  const handleExecuteReturnOk = useCallback(
+    async (checkoutId: string, asset: ScannedAsset) => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        const { error: coErr } = await supabase
+          .from("checkouts")
+          .update({
+            returned_at: new Date().toISOString(),
+            return_received_by: user?.id ?? null,
+            condition_in: "OK",
+          })
+          .eq("id", checkoutId);
+
+        if (coErr) throw coErr;
+
+        const { error: astErr } = await supabase
+          .from("assets")
+          .update({ status: "available" })
+          .eq("id", asset.id);
+
+        if (astErr) throw astErr;
+
+        if (soundEnabled) playScanSuccess();
+        toast.success(`Razduženo: ${asset.name} je sada u magacinu (Dostupno)`);
+
+        setHistory((prev) => [
+          {
+            id: `${Date.now()}-${Math.random()}`,
+            code: asset.code,
+            timestamp: new Date(),
+            status: "returned",
+            asset: { ...asset, status: "available" },
+            note: "Razduženo (Ispravno)",
+          },
+          ...prev.slice(0, 49),
+        ]);
+
+        setActiveCheckout(null);
+        setCurrentAsset({ ...asset, status: "available" });
+      } catch (e) {
+        if (soundEnabled) playScanError();
+        toast.error((e as Error).message || "Greška pri razduživanju.");
+      }
+    },
+    [soundEnabled]
+  );
 
   // Core scan processing logic
   const handleScan = useCallback(
@@ -91,12 +197,67 @@ export default function ScanPage() {
       setLoading(true);
 
       try {
+        // 1. Check if scanned code is a Revers identifier (e.g. REV-XXXX)
+        const isReversCode =
+          cleanCode.toUpperCase().startsWith("REV-") || cleanCode.includes("revers-");
+
+        if (isReversCode) {
+          const revKey = cleanCode.replace(/^REV-/i, "").replace(/^revers-/i, "");
+          const { data: revData } = await supabase
+            .from("checkouts")
+            .select(
+              `id, asset_id, event_id, checked_out_to_name, checked_out_at, expected_return_at, returned_at, condition_out, signature_path,
+               assets:asset_id(id, code, name, serial_number),
+               events:event_id(name, clients:client_id(name))`
+            )
+            .or(`signature_path.ilike.%${revKey}%,id.ilike.${revKey}%`)
+            .order("checked_out_at", { ascending: false });
+
+          if (revData && revData.length > 0) {
+            const first = revData[0];
+            const group: ScannedReversGroup = {
+              reversCode: cleanCode.toUpperCase(),
+              eventName: (first.events as any)?.name,
+              clientName: (first.events as any)?.clients?.name,
+              checkedOutTo: first.checked_out_to_name || "Preuzimalac",
+              checkedOutAt: first.checked_out_at,
+              items: revData.map((c: any) => ({
+                checkoutId: c.id,
+                assetId: c.asset_id,
+                code: c.assets?.code || "—",
+                name: c.assets?.name || "Nepoznata oprema",
+                serialNumber: c.assets?.serial_number,
+                returnedAt: c.returned_at,
+              })),
+            };
+
+            setScannedRevers(group);
+            if (soundEnabled) playScanSuccess();
+            toast.success(`Prepoznat revers: ${group.reversCode} (${group.items.length} stavki)`);
+
+            setHistory((prev) => [
+              {
+                id: `${Date.now()}-${Math.random()}`,
+                code: cleanCode,
+                timestamp: new Date(),
+                status: "revers",
+                note: `Revers: ${group.items.length} stavki`,
+              },
+              ...prev.slice(0, 49),
+            ]);
+            return;
+          }
+        }
+
+        // 2. Search for Asset in database
         const { data, error } = await supabase
           .from("assets")
           .select(
             "*, categories:category_id(id, name), locations:current_location_id(id, name), asset_photos(storage_path, is_primary)"
           )
-          .or(`code.eq.${cleanCode},qr_code.eq.${cleanCode},barcode.eq.${cleanCode},serial_number.eq.${cleanCode}`)
+          .or(
+            `code.eq.${cleanCode},qr_code.eq.${cleanCode},barcode.eq.${cleanCode},serial_number.eq.${cleanCode}`
+          )
           .limit(1)
           .maybeSingle();
 
@@ -107,6 +268,7 @@ export default function ScanPage() {
           if (soundEnabled) playScanError();
           setNotFoundCode(cleanCode);
           setCurrentAsset(null);
+          setActiveCheckout(null);
           setActiveTab("result");
 
           setHistory((prev) => [
@@ -124,6 +286,22 @@ export default function ScanPage() {
           // Found asset
           const assetData = data as unknown as ScannedAsset;
 
+          // Check if there is an active checkout for this asset
+          const { data: coData } = await supabase
+            .from("checkouts")
+            .select(
+              `id, asset_id, event_id, checked_out_to_name, checked_out_at, expected_return_at, condition_out, notes,
+               events:event_id(id, name, clients:client_id(id, name))`
+            )
+            .eq("asset_id", assetData.id)
+            .is("returned_at", null)
+            .order("checked_out_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const activeCo = (coData as unknown as ActiveCheckoutInfo) || null;
+          setActiveCheckout(activeCo);
+
           // History record
           setHistory((prev) => [
             {
@@ -136,8 +314,28 @@ export default function ScanPage() {
             ...prev.slice(0, 49),
           ]);
 
-          if (mode === "batch") {
-            // Batch mode: add directly to scan cart and keep scanning!
+          // Handle according to active mode
+          if (mode === "return") {
+            // INBOUND RETURN MODE
+            if (activeCo && autoReturnOk) {
+              // 1-Scan auto return
+              await handleExecuteReturnOk(activeCo.id, assetData);
+            } else {
+              // Inspect & confirm return
+              if (soundEnabled) playScanSuccess();
+              setCurrentAsset(assetData);
+              setNotFoundCode(null);
+              setActiveTab("result");
+              if (activeCo) {
+                toast.info(`Zaduženo na: ${activeCo.events?.name || "Događaj"}`);
+              } else if (assetData.status === "available") {
+                toast.success(`Artikl je već u magacinu: ${assetData.name}`);
+              } else {
+                toast.info(`Artikl na terenu bez reversa: ${assetData.name}`);
+              }
+            }
+          } else if (mode === "batch") {
+            // OUTBOUND BATCH MODE: add to scan cart and keep scanning!
             const ok = add({
               id: assetData.id,
               code: assetData.code,
@@ -155,7 +353,7 @@ export default function ScanPage() {
             setCurrentAsset(assetData);
             setNotFoundCode(null);
           } else {
-            // Single inspect mode: display rich card
+            // SINGLE INSPECT MODE
             if (soundEnabled) playScanSuccess();
             setCurrentAsset(assetData);
             setNotFoundCode(null);
@@ -171,13 +369,12 @@ export default function ScanPage() {
         setTimeout(() => setLastCode(null), 1200);
       }
     },
-    [loading, lastCode, mode, add, soundEnabled]
+    [loading, lastCode, mode, add, soundEnabled, autoReturnOk, handleExecuteReturnOk]
   );
 
   // Hardware USB/Bluetooth Barcode Scanner Keyboard Wedge Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is focused on an input element
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -187,7 +384,6 @@ export default function ScanPage() {
       }
 
       const now = Date.now();
-      // Most hardware laser barcode scanners emit keystrokes in <45ms increments
       if (now - hidLastTimeRef.current > 100) {
         hidBufferRef.current = "";
       }
@@ -223,6 +419,47 @@ export default function ScanPage() {
     }
   };
 
+  // Revers Bulk Return Action
+  const handleReturnEntireRevers = async () => {
+    if (!scannedRevers) return;
+    setReversBusy(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const openItems = scannedRevers.items.filter((it) => !it.returnedAt);
+      if (openItems.length === 0) {
+        toast.info("Sve stavke sa ovog reversa su već razdužene.");
+        setScannedRevers(null);
+        return;
+      }
+
+      for (const it of openItems) {
+        await supabase
+          .from("checkouts")
+          .update({
+            returned_at: new Date().toISOString(),
+            return_received_by: user?.id ?? null,
+            condition_in: "OK",
+          })
+          .eq("id", it.checkoutId);
+
+        await supabase.from("assets").update({ status: "available" }).eq("id", it.assetId);
+      }
+
+      if (soundEnabled) playScanSuccess();
+      toast.success(
+        `Razdužene sve stavke (${openItems.length}) sa reversa ${scannedRevers.reversCode}`
+      );
+      setScannedRevers(null);
+    } catch (e) {
+      toast.error((e as Error).message || "Greška pri razduživanju reversa.");
+    } finally {
+      setReversBusy(false);
+    }
+  };
+
   // Export session scan history as CSV
   const handleExportHistory = () => {
     if (history.length === 0) {
@@ -238,16 +475,8 @@ export default function ScanPage() {
           value: (r) => r.timestamp.toLocaleTimeString("sr-RS"),
         },
         { header: "Očitana šifra", value: (r) => r.code },
-        {
-          header: "Status baze",
-          value: (r) => (r.status === "found" ? "Pronađeno" : "Nije pronađeno"),
-        },
-        { header: "Naziv opreme", value: (r) => r.asset?.name ?? "" },
-        { header: "Serijski broj", value: (r) => r.asset?.serial_number ?? "" },
-        {
-          header: "Kategorija",
-          value: (r) => r.asset?.categories?.name ?? "",
-        },
+        { header: "Tip", value: (r) => r.status },
+        { header: "Artikal", value: (r) => r.asset?.name ?? r.note ?? "Nije pronađeno" },
         { header: "Status opreme", value: (r) => r.asset?.status ?? "" },
         { header: "Lokacija", value: (r) => r.asset?.locations?.name ?? "" },
       ]
@@ -255,7 +484,6 @@ export default function ScanPage() {
     toast.success("Istorija skeniranja je izvezena.");
   };
 
-  // Primary photo url helper
   const getPrimaryPhotoUrl = (photos?: { storage_path: string; is_primary: boolean }[]) => {
     if (!photos || photos.length === 0) return null;
     const primary = photos.find((p) => p.is_primary) ?? photos[0];
@@ -263,11 +491,19 @@ export default function ScanPage() {
     return data?.publicUrl ?? null;
   };
 
+  // Camera Pause condition: save mobile battery & prevent accidental scans when modals are open
+  const isCameraPaused =
+    bulkOpen ||
+    !!statusModalAsset ||
+    !!damageModalAsset ||
+    !!scannedRevers ||
+    (mode === "single" && (!!currentAsset || !!notFoundCode));
+
   return (
     <PageContainer>
       <PageHeader
         title="Skeniranje Opreme"
-        description="Mobilni skener sa naprednim fokusiranjem, serijskim očitavanjem i reversom"
+        description="Mobilni centar za izdavanje u korpu, instant prijem i razduživanje reversa"
         actions={
           <div className="flex items-center gap-2">
             {/* Audio Toggle */}
@@ -304,39 +540,76 @@ export default function ScanPage() {
 
       {/* Mode Switcher & Hardware Scanner Indicator */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 p-2.5 rounded-xl bg-card border shadow-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
             Režim rada:
           </span>
-          <div className="flex rounded-lg bg-muted p-1 gap-1">
+          <div className="flex rounded-lg bg-muted p-1 gap-1 flex-wrap">
             <button
               type="button"
-              onClick={() => setMode("single")}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                mode === "single"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Pojedinačni pregled
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("batch")}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+              onClick={() => {
+                setMode("batch");
+                setCurrentAsset(null);
+                setActiveCheckout(null);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
                 mode === "batch"
                   ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Sparkles className="h-3 w-3" /> Serijsko u korpu
+              <Sparkles className="h-3.5 w-3.5" /> Izdavanje (U korpu)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("return");
+                setCurrentAsset(null);
+                setActiveCheckout(null);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                mode === "return"
+                  ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Undo2 className="h-3.5 w-3.5" /> Prijem (Razduživanje)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("single");
+                setCurrentAsset(null);
+                setActiveCheckout(null);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                mode === "single"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Info / Karton
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>HID barkod čitač aktivan</span>
+        <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
+          {mode === "return" && (
+            <label className="flex items-center gap-1.5 cursor-pointer select-none text-foreground font-medium bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-1 rounded-md">
+              <input
+                type="checkbox"
+                checked={autoReturnOk}
+                onChange={(e) => setAutoReturnOk(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-emerald-500 accent-emerald-600"
+              />
+              <span className="text-emerald-700 dark:text-emerald-300">1-sken auto prijem</span>
+            </label>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="hidden sm:inline">HID barkod aktivan</span>
+          </div>
         </div>
       </div>
 
@@ -348,7 +621,7 @@ export default function ScanPage() {
             <CardContent className="p-3 sm:p-4 space-y-3">
               <CameraScanner
                 onScan={handleScan}
-                paused={mode === "single" && (!!currentAsset || !!notFoundCode)}
+                paused={isCameraPaused}
                 fullscreen={fullscreen}
                 onToggleFullscreen={() => setFullscreen((f) => !f)}
               />
@@ -366,7 +639,11 @@ export default function ScanPage() {
               >
                 <div className="relative flex-1">
                   <Input
-                    placeholder="Unesi šifru, QR ili barkod ručno..."
+                    placeholder={
+                      mode === "return"
+                        ? "Unesi šifru, QR, barkod ili REV-XXXX za prijem..."
+                        : "Unesi šifru, QR ili barkod ručno..."
+                    }
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
                     className="h-10 pr-8"
@@ -381,7 +658,7 @@ export default function ScanPage() {
                     </button>
                   )}
                 </div>
-                <Button type="submit" variant="secondary" className="h-10 px-4">
+                <Button type="submit" variant="secondary" className="h-10 px-4 font-semibold">
                   Traži
                 </Button>
               </form>
@@ -399,7 +676,7 @@ export default function ScanPage() {
               <TabsTrigger value="cart" className="flex items-center gap-1.5 text-xs sm:text-sm">
                 <ShoppingCart className="h-4 w-4" /> Korpa
                 {items.length > 0 && (
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[11px] ml-1">
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[11px] ml-1 font-bold">
                     {items.length}
                   </Badge>
                 )}
@@ -419,7 +696,7 @@ export default function ScanPage() {
                   {loading && (
                     <div className="py-12 text-center space-y-3">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                      <p className="text-sm text-muted-foreground">Pretraga baze opreme...</p>
+                      <p className="text-sm text-muted-foreground">Pretraga baze i zaduženja...</p>
                     </div>
                   )}
 
@@ -429,9 +706,17 @@ export default function ScanPage() {
                         <ScanLine className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-sm">Spremno za skeniranje</h4>
+                        <h4 className="font-semibold text-sm">
+                          {mode === "return"
+                            ? "Spremno za prijem i razduživanje"
+                            : mode === "batch"
+                              ? "Spremno za pakovanje i izdavanje"
+                              : "Spremno za pregled opreme"}
+                        </h4>
                         <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
-                          Usmite kameru prema QR ili bar-kodu na opremi ili povežite bežični skener.
+                          {mode === "return"
+                            ? "Usmite kameru prema nalepnici opreme ili skenirajte QR kod na reversu (REV-XXXX) za automatski prijem."
+                            : "Usmite kameru prema QR ili barkodu za brzo očitavanje."}
                         </p>
                       </div>
                     </div>
@@ -439,7 +724,8 @@ export default function ScanPage() {
 
                   {/* Scanned Asset Found Card */}
                   {!loading && currentAsset && (
-                    <div className="space-y-5">
+                    <div className="space-y-4">
+                      {/* Asset Header Info */}
                       <div className="flex items-start gap-3.5">
                         {getPrimaryPhotoUrl(currentAsset.asset_photos) ? (
                           <img
@@ -485,40 +771,150 @@ export default function ScanPage() {
                         </div>
                       </div>
 
-                      {/* Action Buttons Grid */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t">
-                        <Button
-                          onClick={() => addToCart(currentAsset)}
-                          className="h-10"
-                        >
-                          <Plus className="mr-1.5 h-4 w-4" /> U korpu
-                        </Button>
+                      {/* INBOUND RETURN WORKFLOW CARD */}
+                      {mode === "return" ? (
+                        <div className="space-y-3 pt-2 border-t">
+                          {activeCheckout ? (
+                            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-3.5 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                                  <Receipt className="h-3.5 w-3.5" /> Aktivno Zaduženje
+                                </span>
+                                <Badge variant="outline" className="text-[10px] bg-background">
+                                  {activeCheckout.events?.name || "Događaj"}
+                                </Badge>
+                              </div>
 
-                        <Button
-                          variant="secondary"
-                          onClick={() => setStatusModalAsset(currentAsset)}
-                          className="h-10"
-                        >
-                          <RefreshCw className="mr-1.5 h-4 w-4" /> Promeni status
-                        </Button>
+                              <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
+                                <div>
+                                  Preuzeo:{" "}
+                                  <span className="text-foreground font-medium">
+                                    {activeCheckout.checked_out_to_name || "—"}
+                                  </span>
+                                </div>
+                                <div>
+                                  Rok:{" "}
+                                  <span className="text-foreground font-medium">
+                                    {activeCheckout.expected_return_at
+                                      ? formatDateTime(activeCheckout.expected_return_at)
+                                      : "Nije definisan"}
+                                  </span>
+                                </div>
+                              </div>
 
-                        <Button variant="outline" asChild className="h-10">
-                          <Link to={`/assets/${currentAsset.id}`}>
-                            Karton opreme <ChevronRight className="ml-1 h-4 w-4" />
-                          </Link>
-                        </Button>
+                              {/* Two Primary Instant Return Buttons */}
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <Button
+                                  onClick={() =>
+                                    handleExecuteReturnOk(activeCheckout.id, currentAsset)
+                                  }
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-11"
+                                >
+                                  <CheckCircle2 className="mr-1.5 h-4 w-4" /> Ispravno (Razduži)
+                                </Button>
 
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setCurrentAsset(null);
-                            setNotFoundCode(null);
-                          }}
-                          className="h-10"
-                        >
-                          Skeniraj sledeće
-                        </Button>
-                      </div>
+                                <Button
+                                  variant="outline"
+                                  onClick={() =>
+                                    setDamageModalAsset({
+                                      id: currentAsset.id,
+                                      code: currentAsset.code,
+                                      name: currentAsset.name,
+                                      checkoutId: activeCheckout.id,
+                                    })
+                                  }
+                                  className="border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 font-semibold h-11"
+                                >
+                                  <AlertTriangle className="mr-1.5 h-4 w-4 text-rose-500" />{" "}
+                                  Oštećeno
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-muted/50 rounded-xl p-3.5 space-y-2 border">
+                              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                                {currentAsset.status === "available" ? (
+                                  <>
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Artikl je
+                                    već razdužen i nalazi se u magacinu.
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertCircle className="h-4 w-4 text-amber-500" /> Artikl ima
+                                    status „{currentAsset.status}”, ali nema otvoren revers.
+                                  </>
+                                )}
+                              </div>
+
+                              {currentAsset.status !== "available" && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="w-full mt-2"
+                                  onClick={async () => {
+                                    await supabase
+                                      .from("assets")
+                                      .update({ status: "available" })
+                                      .eq("id", currentAsset.id);
+                                    setCurrentAsset({ ...currentAsset, status: "available" });
+                                    toast.success(
+                                      `Status artikla ${currentAsset.name} promenjen u Dostupno.`
+                                    );
+                                  }}
+                                >
+                                  Vrati u magacin (Dostupno)
+                                </Button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                setCurrentAsset(null);
+                                setActiveCheckout(null);
+                              }}
+                            >
+                              Skeniraj sledeći artikl
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* OUTBOUND DISPATCH & SINGLE INSPECT ACTIONS */
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                          <Button onClick={() => addToCart(currentAsset)} className="h-10">
+                            <Plus className="mr-1.5 h-4 w-4" /> U korpu
+                          </Button>
+
+                          <Button
+                            variant="secondary"
+                            onClick={() => setStatusModalAsset(currentAsset)}
+                            className="h-10"
+                          >
+                            <RefreshCw className="mr-1.5 h-4 w-4" /> Promeni status
+                          </Button>
+
+                          <Button variant="outline" asChild className="h-10">
+                            <Link to={`/assets/${currentAsset.id}`}>
+                              Karton opreme <ChevronRight className="ml-1 h-4 w-4" />
+                            </Link>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setCurrentAsset(null);
+                              setNotFoundCode(null);
+                            }}
+                            className="h-10"
+                          >
+                            Skeniraj sledeće
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -672,13 +1068,17 @@ export default function ScanPage() {
                         >
                           <div className="min-w-0 flex-1 pr-2">
                             <div className="flex items-center gap-2 font-medium">
-                              {h.status === "found" ? (
+                              {h.status === "returned" ? (
                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              ) : h.status === "revers" ? (
+                                <Receipt className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                              ) : h.status === "found" ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                               ) : (
                                 <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                               )}
                               <span className="truncate">
-                                {h.asset ? h.asset.name : "Nepoznata oprema"}
+                                {h.asset ? h.asset.name : h.note || "Očitana šifra"}
                               </span>
                             </div>
                             <div className="text-[11px] text-muted-foreground font-mono mt-0.5 flex gap-2">
@@ -687,7 +1087,7 @@ export default function ScanPage() {
                             </div>
                           </div>
 
-                          {h.asset && (
+                          {h.asset && mode === "batch" && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -709,7 +1109,7 @@ export default function ScanPage() {
       </div>
 
       {/* Floating Bottom Mobile Dock for Cart Checkout */}
-      {items.length > 0 && (
+      {items.length > 0 && mode === "batch" && (
         <div className="fixed bottom-4 inset-x-4 sm:hidden z-40">
           <div className="bg-primary text-primary-foreground p-3 rounded-2xl shadow-xl flex items-center justify-between border border-white/20 backdrop-blur-md">
             <div className="flex items-center gap-2.5">
@@ -731,6 +1131,105 @@ export default function ScanPage() {
           </div>
         </div>
       )}
+
+      {/* Scanned Revers Quick-Return Modal */}
+      <Dialog open={!!scannedRevers} onOpenChange={(v) => !v && setScannedRevers(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col justify-between p-5">
+          <DialogHeader className="pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <Receipt className="h-5 w-5 text-primary" />
+              Revers {scannedRevers?.reversCode}
+            </DialogTitle>
+          </DialogHeader>
+
+          {scannedRevers && (
+            <div className="py-2 space-y-4 flex-1 overflow-y-auto">
+              <div className="bg-muted/50 rounded-xl p-3 text-xs space-y-1 border">
+                <div>
+                  Događaj:{" "}
+                  <span className="font-semibold text-foreground">
+                    {scannedRevers.eventName || "—"}
+                  </span>
+                  {scannedRevers.clientName && (
+                    <span className="text-muted-foreground"> ({scannedRevers.clientName})</span>
+                  )}
+                </div>
+                <div>
+                  Preuzeo:{" "}
+                  <span className="font-semibold text-foreground">
+                    {scannedRevers.checkedOutTo}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Stavke na reversu ({scannedRevers.items.length})
+                </h5>
+                <ul className="divide-y border rounded-xl max-h-56 overflow-y-auto text-xs">
+                  {scannedRevers.items.map((it) => (
+                    <li
+                      key={it.checkoutId}
+                      className="p-2.5 flex items-center justify-between hover:bg-muted/20"
+                    >
+                      <div>
+                        <div className="font-medium text-foreground">{it.name}</div>
+                        <div className="font-mono text-[11px] text-muted-foreground">
+                          {it.code}
+                          {it.serialNumber ? ` · SN: ${it.serialNumber}` : ""}
+                        </div>
+                      </div>
+                      {it.returnedAt ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 text-[10px]"
+                        >
+                          Vraćeno
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-amber-700 dark:text-amber-400 text-[10px]"
+                        >
+                          Zaduženo
+                        </Badge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-3 border-t flex items-center justify-between sm:justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (scannedRevers) {
+                  navigate(`/checkouts?q=${encodeURIComponent(scannedRevers.reversCode)}`);
+                }
+              }}
+            >
+              Otvori u Reversima
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleReturnEntireRevers}
+              disabled={reversBusy}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+            >
+              {reversBusy ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+              )}
+              Razduži sve stavke
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Checkout Modal with Digital Signature */}
       <BulkCheckoutDialog
@@ -755,6 +1254,24 @@ export default function ScanPage() {
           }
         }}
       />
+
+      {/* Damaged Return Service Prompt Modal */}
+      {damageModalAsset && (
+        <DamageReportDialog
+          open={!!damageModalAsset}
+          onOpenChange={(v) => !v && setDamageModalAsset(null)}
+          asset={damageModalAsset}
+          sendToService={true}
+          checkoutId={damageModalAsset.checkoutId}
+          onReportSubmitted={() => {
+            if (currentAsset && currentAsset.id === damageModalAsset.id) {
+              setCurrentAsset({ ...currentAsset, status: "damaged" });
+            }
+            setActiveCheckout(null);
+            setDamageModalAsset(null);
+          }}
+        />
+      )}
     </PageContainer>
   );
 }

@@ -6,7 +6,7 @@ import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Receipt, Undo2, FileDown, FileSpreadsheet, Package, User, Clock, Search, LayoutGrid, List as ListIcon, X, CalendarDays, CheckCircle2, Printer } from "lucide-react";
+import { Receipt, Undo2, FileDown, FileSpreadsheet, Package, User, Clock, Search, LayoutGrid, List as ListIcon, X, CalendarDays, CheckCircle2, Printer, QrCode } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/format";
 import { ReturnDialog } from "@/components/checkout/CheckoutDialog";
 import { CheckoutWizard } from "@/components/checkout/CheckoutWizard";
@@ -19,6 +19,9 @@ import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/common/ConfirmDelete";
 import { useAuth } from "@/features/auth/use-auth";
 import { Input } from "@/components/ui/input";
+import { CameraScanner, type ScanResult } from "@/components/scanner/CameraScanner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { playScanSuccess } from "@/lib/sound";
 
 type Asset = { id: string; code: string; name: string; serial_number: string | null };
 type CheckoutRow = {
@@ -49,7 +52,18 @@ export default function CheckoutsPage() {
   const [selectedGroup, setSelectedGroup] = useState<CheckoutRow[] | null>(null);
   const [thermalData, setThermalData] = useState<ThermalReceiptData | null>(null);
   const [thermalOpen, setThermalOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [params, setParams] = useSearchParams();
+
+  const handleQuickScan = (r: ScanResult) => {
+    const clean = r.code.trim();
+    if (!clean) return;
+    const term = clean.replace(/^REV-/i, "");
+    setQ(term);
+    setScanOpen(false);
+    playScanSuccess();
+    toast.success(`Filtrirano po šifri: ${clean}`);
+  };
 
   useEffect(() => {
     if (params.get("new") === "1") {
@@ -423,11 +437,35 @@ export default function CheckoutsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Pretraži po događaju, licu, šifri opreme..."
+            placeholder="Pretraži po događaju, licu, šifri ili skeniraj..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="pl-10 bg-card border-input focus-visible:ring-primary/50 text-sm h-10 rounded-lg shadow-xs"
+            className="pl-10 pr-28 bg-card border-input focus-visible:ring-primary/50 text-sm h-10 rounded-lg shadow-xs"
           />
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {q && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => setQ("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setScanOpen(true)}
+              className="h-7 px-2.5 text-xs font-semibold gap-1 text-primary hover:text-primary shadow-xs"
+              title="Skeniraj revers QR ili barkod opreme"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              <span>Skeniraj</span>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -600,6 +638,24 @@ export default function CheckoutsPage() {
         onOpenChange={setThermalOpen}
         data={thermalData}
       />
+
+      {/* Quick QR & Barcode Scanner Dialog for Checkouts Search */}
+      <Dialog open={scanOpen} onOpenChange={setScanOpen}>
+        <DialogContent className="max-w-md p-4">
+          <DialogHeader className="pb-2 border-b">
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              Skeniraj Revers ili Opremu
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <CameraScanner onScan={handleQuickScan} />
+            <p className="text-xs text-muted-foreground text-center">
+              Usmite kameru prema QR kodu na reversu ili barkodu opreme za instant pronalazak.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

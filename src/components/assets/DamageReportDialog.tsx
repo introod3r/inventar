@@ -15,9 +15,18 @@ type Props = {
   asset: { id: string; code: string; name: string };
   /** Also create a service_record and set status=in_service. Default: false (just damaged). */
   sendToService?: boolean;
+  checkoutId?: string | null;
+  onReportSubmitted?: () => void;
 };
 
-export function DamageReportDialog({ open, onOpenChange, asset, sendToService = false }: Props) {
+export function DamageReportDialog({
+  open,
+  onOpenChange,
+  asset,
+  sendToService = false,
+  checkoutId,
+  onReportSubmitted,
+}: Props) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [severity, setSeverity] = useState<"minor" | "moderate" | "severe">("moderate");
@@ -72,6 +81,15 @@ export function DamageReportDialog({ open, onOpenChange, asset, sendToService = 
 
       // Update asset status
       await supabase.from("assets").update({ status: alsoService ? "in_service" : "damaged" }).eq("id", asset.id);
+
+      // If associated with a checkout return, mark checkout returned with damaged note
+      if (checkoutId) {
+        await supabase.from("checkouts").update({
+          returned_at: new Date().toISOString(),
+          return_received_by: user?.id ?? null,
+          condition_in: `Oštećeno (${severity}) · ${description}`,
+        }).eq("id", checkoutId);
+      }
     },
     onSuccess: () => {
       toast.success("Prijava oštećenja sačuvana");
@@ -79,6 +97,11 @@ export function DamageReportDialog({ open, onOpenChange, asset, sendToService = 
       qc.invalidateQueries({ queryKey: ["asset-history", asset.id] });
       qc.invalidateQueries({ queryKey: ["damage-reports"] });
       qc.invalidateQueries({ queryKey: ["service-records"] });
+      if (checkoutId) {
+        qc.invalidateQueries({ queryKey: ["checkouts"] });
+        qc.invalidateQueries({ queryKey: ["open-checkouts"] });
+      }
+      onReportSubmitted?.();
       onOpenChange(false);
     },
     onError: (e) => toast.error((e as Error).message),

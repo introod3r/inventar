@@ -192,11 +192,34 @@ export function ReturnDialog({ open, onOpenChange, checkout, asset }: ReturnProp
       if (checkout.event_id) {
         await supabase.from("event_assets").update({ status: damaged ? "missing" : "returned" }).eq("event_id", checkout.event_id).eq("asset_id", asset.id);
       }
+      if (damaged) {
+        const desc = conditionIn ? `Oštećenje pri povratu: ${conditionIn}` : "Prijavljeno oštećenje pri razduživanju";
+        const { data: srv } = await supabase.from("service_records").insert({
+          asset_id: asset.id,
+          type: "repair",
+          status: "reported",
+          description: desc,
+          reported_by: user?.id ?? null,
+        }).select("id").single();
+
+        await supabase.from("damage_reports").insert({
+          asset_id: asset.id,
+          severity: "moderate",
+          description: desc,
+          reported_by: user?.id ?? null,
+          service_record_id: srv?.id ?? null,
+        });
+      }
+
       return { signaturePath: path };
     },
     onSuccess: async (res) => {
       toast.success("Razduženje sačuvano");
       qc.invalidateQueries({ queryKey: ["checkouts"] });
+      qc.invalidateQueries({ queryKey: ["open-checkouts"] });
+      qc.invalidateQueries({ queryKey: ["service-records"] });
+      qc.invalidateQueries({ queryKey: ["damage-reports"] });
+      qc.invalidateQueries({ queryKey: ["damaged-assets"] });
       qc.invalidateQueries({ queryKey: ["asset", asset.id] });
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["events"] });

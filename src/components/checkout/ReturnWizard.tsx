@@ -190,6 +190,25 @@ export function ReturnWizard({ open, onOpenChange }: Props) {
             const eaStatus = st.condition === "missing" ? "missing" : "returned";
             await supabase.from("event_assets").update({ status: eaStatus }).eq("event_id", c.event_id).eq("asset_id", c.asset_id);
           }
+
+          if (st.condition === "damaged") {
+            const desc = st.note ? `Oštećeno pri povratu: ${st.note}` : "Prijavljeno oštećenje pri povratu opreme";
+            const { data: srv } = await supabase.from("service_records").insert({
+              asset_id: c.asset_id,
+              type: "repair",
+              status: "reported",
+              description: desc,
+              reported_by: user?.id ?? null,
+            }).select("id").single();
+
+            await supabase.from("damage_reports").insert({
+              asset_id: c.asset_id,
+              severity: "moderate",
+              description: desc,
+              reported_by: user?.id ?? null,
+              service_record_id: srv?.id ?? null,
+            });
+          }
         }
 
         if (c.assets) {
@@ -219,6 +238,9 @@ export function ReturnWizard({ open, onOpenChange }: Props) {
       qc.invalidateQueries({ queryKey: ["checkouts"] });
       qc.invalidateQueries({ queryKey: ["open-checkouts"] });
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["service-records"] });
+      qc.invalidateQueries({ queryKey: ["damage-reports"] });
+      qc.invalidateQueries({ queryKey: ["damaged-assets"] });
       onOpenChange(false);
     } catch (e) {
       toast.error((e as Error).message);
