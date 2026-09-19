@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Printer, QrCode, Layers, Eye, Check, Settings2, Usb } from "lucide-react";
+import { Printer, QrCode, Layers, Eye, Check, Settings2, Usb, Ruler, Info } from "lucide-react";
 import { printQrSheet, generateQrDataUrl, type QrItem, type QrLayout, type QrPrintOptions } from "@/lib/qr-print";
 import {
   THERMAL_LABEL_DIMENSIONS,
@@ -22,6 +22,27 @@ interface PrintQrDialogProps {
   onOpenChange: (open: boolean) => void;
   items: QrItem[];
   title?: string;
+}
+
+interface LabelPreviewConfig {
+  name: string;
+  formatType: "sheet" | "thermal";
+  widthMm: number;
+  heightMm: number;
+  aspectRatio: number;
+  maxWidthPx: number;
+  qrSizeClass: string;
+  paddingClass: string;
+  gapClass: string;
+  fontScale: {
+    company: string;
+    code: string;
+    name: string;
+    serial: string;
+  };
+  badgeLabel: string;
+  badgeDetail: string;
+  description: string;
 }
 
 export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialogProps) {
@@ -56,6 +77,162 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
     name: "L-Acoustics K2 Line Array Speaker",
     serial: "SN-9981-LA",
   };
+
+  const activeConfig: LabelPreviewConfig = useMemo(() => {
+    if (isThermal) {
+      switch (thermalSize) {
+        case "40x25":
+          return {
+            name: "Termalna nalepnica 40 × 25 mm",
+            formatType: "thermal",
+            widthMm: 40,
+            heightMm: 25,
+            aspectRatio: 40 / 25,
+            maxWidthPx: 290,
+            qrSizeClass: "w-13 h-13 sm:w-14 sm:h-14",
+            paddingClass: "p-2 sm:p-2.5",
+            gapClass: "gap-2 sm:gap-2.5",
+            fontScale: {
+              company: "text-[9px]",
+              code: "text-xs font-bold font-mono",
+              name: "text-[11px] leading-tight line-clamp-1 font-semibold",
+              serial: "text-[9px] font-mono",
+            },
+            badgeLabel: "40 × 25 mm (Kompaktna)",
+            badgeDetail: "Termalna rolna · Kompaktna etiketa",
+            description: "Optimizovano za kablove, mikrofone, bežične bubice i sitnu opremu.",
+          };
+        case "80x50":
+          return {
+            name: "Termalna nalepnica 80 × 50 mm",
+            formatType: "thermal",
+            widthMm: 80,
+            heightMm: 50,
+            aspectRatio: 80 / 50,
+            maxWidthPx: 430,
+            qrSizeClass: "w-22 h-22 sm:w-26 sm:h-26",
+            paddingClass: "p-4 sm:p-5",
+            gapClass: "gap-4 sm:gap-5",
+            fontScale: {
+              company: "text-xs font-bold tracking-wider",
+              code: "text-base font-bold font-mono",
+              name: "text-sm sm:text-base leading-snug line-clamp-2 font-bold",
+              serial: "text-xs font-mono",
+            },
+            badgeLabel: "80 × 50 mm (Velika)",
+            badgeDetail: "Termalna rolna · Veliki format",
+            description: "Maksimalna čitljivost iz daljine za transportne sanduke, binske konstrukcije i rek ormane.",
+          };
+        case "60x40":
+          return {
+            name: "Termalna nalepnica 60 × 40 mm",
+            formatType: "thermal",
+            widthMm: 60,
+            heightMm: 40,
+            aspectRatio: 60 / 40,
+            maxWidthPx: 370,
+            qrSizeClass: "w-18 h-18 sm:w-20 sm:h-20",
+            paddingClass: "p-3 sm:p-3.5",
+            gapClass: "gap-3 sm:gap-3.5",
+            fontScale: {
+              company: "text-[10px] font-bold",
+              code: "text-sm font-bold font-mono",
+              name: "text-xs sm:text-sm leading-snug line-clamp-2 font-semibold",
+              serial: "text-[11px] font-mono",
+            },
+            badgeLabel: "60 × 40 mm (Kofer/Rek)",
+            badgeDetail: "Termalna rolna · Koferi i rekovi",
+            description: "Format za flight case kofere, rek ormane, pojačala i zvučničke kutije.",
+          };
+        case "58x40":
+          return {
+            name: "Termalna nalepnica 58 × 40 mm",
+            formatType: "thermal",
+            widthMm: 58,
+            heightMm: 40,
+            aspectRatio: 58 / 40,
+            maxWidthPx: 360,
+            qrSizeClass: "w-18 h-18 sm:w-20 sm:h-20",
+            paddingClass: "p-3 sm:p-3.5",
+            gapClass: "gap-3 sm:gap-3.5",
+            fontScale: {
+              company: "text-[10px] font-bold",
+              code: "text-sm font-bold font-mono",
+              name: "text-xs sm:text-sm leading-snug line-clamp-2 font-semibold",
+              serial: "text-[11px] font-mono",
+            },
+            badgeLabel: "58 × 40 mm (Standard)",
+            badgeDetail: "Termalna rolna · Standardna",
+            description: "Standardna artikl nalepnica sa više vertikalnog prostora za puni naziv.",
+          };
+        case "50x30":
+        default:
+          return {
+            name: "Termalna nalepnica 50 × 30 mm",
+            formatType: "thermal",
+            widthMm: 50,
+            heightMm: 30,
+            aspectRatio: 50 / 30,
+            maxWidthPx: 330,
+            qrSizeClass: "w-16 h-16 sm:w-17 sm:h-17",
+            paddingClass: "p-2.5 sm:p-3",
+            gapClass: "gap-2.5 sm:gap-3",
+            fontScale: {
+              company: "text-[10px] font-bold",
+              code: "text-xs sm:text-sm font-bold font-mono",
+              name: "text-xs leading-tight line-clamp-2 font-semibold",
+              serial: "text-[10px] font-mono",
+            },
+            badgeLabel: "50 × 30 mm (Industrijski)",
+            badgeDetail: "Termalna rolna · Industrijski standard",
+            description: "Najzastupljeniji magacinski standard za rasvetu, audio tehniku i monitore.",
+          };
+      }
+    } else if (layout === "a4_40") {
+      return {
+        name: "A4 Tabak · 40 nalepnica/list",
+        formatType: "sheet",
+        widthMm: 52,
+        heightMm: 25,
+        aspectRatio: 52 / 25,
+        maxWidthPx: 370,
+        qrSizeClass: "w-13 h-13 sm:w-15 sm:h-15",
+        paddingClass: "p-2 sm:p-2.5",
+        gapClass: "gap-2 sm:gap-2.5",
+        fontScale: {
+          company: "text-[9px] font-bold",
+          code: "text-xs font-bold font-mono",
+          name: "text-[11px] leading-tight line-clamp-1 font-semibold",
+          serial: "text-[10px] font-mono",
+        },
+        badgeLabel: "52 × 25 mm (A4 40/str)",
+        badgeDetail: "A4 samolepljivi tabak · 4 kolone × 10 redova",
+        description: "Ekonomičan list sa velikim brojem etiketa za standardne kancelarijske štampače.",
+      };
+    } else {
+      // Default: a4_24
+      return {
+        name: "A4 Tabak · 24 nalepnice/list",
+        formatType: "sheet",
+        widthMm: 70,
+        heightMm: 37,
+        aspectRatio: 70 / 37,
+        maxWidthPx: 390,
+        qrSizeClass: "w-17 h-17 sm:w-19 sm:h-19",
+        paddingClass: "p-3 sm:p-3.5",
+        gapClass: "gap-3 sm:gap-3.5",
+        fontScale: {
+          company: "text-[10px] font-bold",
+          code: "text-sm font-bold font-mono",
+          name: "text-xs sm:text-sm leading-snug line-clamp-2 font-semibold",
+          serial: "text-[11px] font-mono",
+        },
+        badgeLabel: "70 × 37 mm (A4 24/str)",
+        badgeDetail: "A4 samolepljivi tabak · 3 kolone × 8 redova",
+        description: "Standardne Avery/Herma samolepljive nalepnice za laserske i inkjet štampače.",
+      };
+    }
+  }, [isThermal, thermalSize, layout]);
 
   useEffect(() => {
     if (open) {
@@ -335,60 +512,159 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
 
             {/* Live Sticker Preview Box */}
             <div className="space-y-3 flex flex-col">
-              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Eye className="w-4 h-4 text-cyan-500" />
-                3. Pregled izgleda nalepnice
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-cyan-500" />
+                  3. Pregled izgleda nalepnice
+                </Label>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono border-cyan-500/30 text-cyan-700 dark:text-cyan-300 bg-cyan-500/10"
+                >
+                  {activeConfig.badgeLabel}
+                </Badge>
+              </div>
 
-              <div className="flex-1 min-h-40 bg-slate-200 dark:bg-slate-950 p-6 rounded-2xl border border-slate-300 dark:border-slate-800 flex items-center justify-center shadow-inner relative overflow-hidden">
-                <div className="absolute top-2 right-2 text-[10px] font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-widest pointer-events-none">
-                  UŽIVO PREGLED
+              {/* Main Preview Frame */}
+              <div className="flex-1 min-h-[320px] bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 rounded-2xl border border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all">
+                {/* Background Blueprint / Grid Pattern */}
+                <div
+                  className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
+                  style={{
+                    backgroundImage: `radial-gradient(circle, currentColor 1px, transparent 1px)`,
+                    backgroundSize: "16px 16px",
+                  }}
+                />
+
+                {/* Top Info Bar inside frame */}
+                <div className="w-full flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-3 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse shrink-0" />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
+                      {activeConfig.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 font-mono text-[10px] text-slate-500">
+                    <Ruler className="w-3 h-3 text-cyan-500" />
+                    <span>{(activeConfig.widthMm / activeConfig.heightMm).toFixed(2)} : 1</span>
+                  </div>
                 </div>
 
-                {/* Sticker Mockup Card */}
+                {/* Sticker Mockup with Dimension Lines (Kotiranje) */}
                 <div
-                  className="bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-slate-300 flex items-center gap-4 w-full transition-all duration-300 transform hover:scale-102"
-                  style={{
-                    maxWidth: isThermal
-                      ? thermalSize === "80x50"
-                        ? "420px"
-                        : thermalSize === "40x25"
-                        ? "280px"
-                        : thermalSize === "50x30"
-                        ? "320px"
-                        : "360px"
-                      : "380px",
-                  }}
+                  className="w-full flex flex-col items-center justify-center transition-all duration-300 ease-out"
+                  style={{ maxWidth: `${activeConfig.maxWidthPx}px` }}
                 >
-                  {previewQrUrl ? (
-                    <img src={previewQrUrl} alt="QR Sample" className="w-20 h-20 object-contain shrink-0 rounded border border-slate-200 p-0.5" />
-                  ) : (
-                    <div className="w-20 h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 shrink-0">
-                      <QrCode className="w-10 h-10" />
+                  {/* Horizontal Width Dimension Ruler */}
+                  <div className="w-full flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 mb-1.5 px-0.5 select-none">
+                    <div className="flex-1 flex items-center">
+                      <div className="h-2.5 w-0.5 bg-cyan-500/60 rounded-full" />
+                      <div className="flex-1 border-t border-dashed border-cyan-500/40" />
                     </div>
-                  )}
+                    <span className="px-2 py-0.5 mx-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-bold text-cyan-700 dark:text-cyan-400 shadow-2xs">
+                      {activeConfig.widthMm} mm
+                    </span>
+                    <div className="flex-1 flex items-center">
+                      <div className="flex-1 border-t border-dashed border-cyan-500/40" />
+                      <div className="h-2.5 w-0.5 bg-cyan-500/60 rounded-full" />
+                    </div>
+                  </div>
 
-                  <div className="flex-1 min-w-0 space-y-1">
-                    {showCompany && companyName && (
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                        {companyName}
+                  {/* Sticker Container with Height Ruler on the right */}
+                  <div className="w-full flex items-center gap-2">
+                    {/* The Physical Sticker Mockup */}
+                    <div
+                      className={`relative w-full bg-white text-slate-900 rounded-xl shadow-lg border border-slate-300/90 flex items-center ${activeConfig.gapClass} ${activeConfig.paddingClass} transition-all duration-300 ease-out transform hover:scale-[1.01]`}
+                      style={{
+                        aspectRatio: `${activeConfig.widthMm} / ${activeConfig.heightMm}`,
+                      }}
+                    >
+                      {/* Media Backing Indicator (Thermal Roll Peel or A4 Label) */}
+                      {activeConfig.formatType === "thermal" ? (
+                        <div
+                          className="absolute -inset-1.5 -z-10 rounded-xl bg-[#faf6eb] dark:bg-[#1e1c17] border border-amber-800/15 dark:border-amber-700/20 shadow-xs pointer-events-none opacity-90 transition-all"
+                          title="Termalna papirna traka (Rolna)"
+                        >
+                          {/* Notch simulation */}
+                          <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-2 h-4 rounded-r-full bg-slate-100 dark:bg-slate-950 border-r border-amber-800/20" />
+                          <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-2 h-4 rounded-l-full bg-slate-100 dark:bg-slate-950 border-l border-amber-800/20" />
+                        </div>
+                      ) : (
+                        <div
+                          className="absolute -inset-1.5 -z-10 rounded-xl bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 pointer-events-none opacity-60 transition-all"
+                          title="A4 Samolepljivi tabak"
+                        />
+                      )}
+
+                      {/* QR Code Container */}
+                      <div
+                        className={`${activeConfig.qrSizeClass} bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs transition-all duration-300`}
+                      >
+                        {previewQrUrl ? (
+                          <img
+                            src={previewQrUrl}
+                            alt="QR Kod"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <QrCode className="w-full h-full text-slate-400" />
+                        )}
                       </div>
-                    )}
-                    {showCode && (
-                      <div className="text-sm font-mono font-bold text-cyan-600 truncate">
-                        {sampleItem.code}
+
+                      {/* Label Text Metadata */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center space-y-0.5 transition-all">
+                        {showCompany && companyName && (
+                          <div
+                            className={`${activeConfig.fontScale.company} font-bold text-slate-500 uppercase tracking-wider truncate`}
+                          >
+                            {companyName}
+                          </div>
+                        )}
+                        {showCode && (
+                          <div
+                            className={`${activeConfig.fontScale.code} font-mono text-cyan-600 dark:text-cyan-600 truncate`}
+                          >
+                            {sampleItem.code}
+                          </div>
+                        )}
+                        {showName && (
+                          <div
+                            className={`${activeConfig.fontScale.name} font-semibold text-slate-900 leading-tight`}
+                          >
+                            {sampleItem.name}
+                          </div>
+                        )}
+                        {showSerial && sampleItem.serial && (
+                          <div
+                            className={`${activeConfig.fontScale.serial} text-slate-500 font-mono truncate`}
+                          >
+                            S/N: {sampleItem.serial}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {showName && (
-                      <div className="text-xs font-semibold text-slate-900 leading-tight line-clamp-2">
-                        {sampleItem.name}
-                      </div>
-                    )}
-                    {showSerial && sampleItem.serial && (
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        S/N: {sampleItem.serial}
-                      </div>
-                    )}
+                    </div>
+
+                    {/* Vertical Height Dimension Ruler */}
+                    <div className="h-full flex flex-col items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 py-0.5 select-none shrink-0">
+                      <div className="w-2.5 h-0.5 bg-cyan-500/60 rounded-full" />
+                      <div className="flex-1 border-r border-dashed border-cyan-500/40 my-1" />
+                      <span className="px-1 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-bold text-cyan-700 dark:text-cyan-400 shadow-2xs [writing-mode:vertical-lr] rotate-180">
+                        {activeConfig.heightMm} mm
+                      </span>
+                      <div className="flex-1 border-r border-dashed border-cyan-500/40 my-1" />
+                      <div className="w-2.5 h-0.5 bg-cyan-500/60 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Use Case Helper */}
+                <div className="w-full mt-4 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 flex items-start gap-2 text-left text-xs text-slate-500 dark:text-slate-400">
+                  <Info className="w-4 h-4 text-cyan-500 shrink-0 mt-0.5" />
+                  <div className="flex-1 text-[11px] leading-relaxed">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {activeConfig.badgeDetail}:{" "}
+                    </span>
+                    <span>{activeConfig.description}</span>
                   </div>
                 </div>
               </div>
