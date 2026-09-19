@@ -160,8 +160,9 @@ Statusi definisani u `src/lib/status.ts`:
     - `ThermalReversDialog.tsx`: Realističan grafički prikaz POS papirne trake sa zupčastim rubom i instant tasterima za štampu.
   - **Termalne Nalepnice za Opremu (Labels):**
     - TSPL generator (TSC, Xprinter, Zebra-kompatibilni štampači).
-    - Standardne dimenzije nalepnica: 50x30mm, 58x40mm, 60x40mm, 40x25mm, 80x50mm.
+    - Standardne dimenzije nalepnica: 50x30mm, 58x40mm, 60x40mm, 40x25mm, 80x50mm, kao i A4 tabaci (24/str i 40/str).
     - QR kod, 1D Code128 barkod ili kombinovano.
+    - `PrintQrDialog.tsx`: Dinamički uživo preview nalepnice sa realističnom promenom proporcija (aspect-ratio), grafičkim kotiranjem (ruler u mm po širini i visini), simulacijom medija (termalna rolna sa perforacijama vs A4 tabak) i automatskim skaliranjem tipografije i QR koda prema izabranoj dimenziji.
   - **Univerzalna Kompatibilnost & Hardverska Povezanost:**
     - Zero-install: Optimizovan CSS `@page` zero-margin monohromatski renderer za 100% uređaja (uključujući iOS Safari i mobilne telefone).
     - Direktno USB povezivanje preko Web Serial API (`navigator.serial`).
