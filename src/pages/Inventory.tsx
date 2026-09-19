@@ -926,7 +926,7 @@ export default function AssetsList() {
               <Camera className="h-5 w-5 text-primary" /> Skeniranje koda opreme
             </DialogTitle>
           </DialogHeader>
-          <div className="rounded-xl overflow-hidden mt-2 bg-black min-h-[300px] flex items-center justify-center">
+          <div className="rounded-xl overflow-hidden mt-2 bg-black min-h-75 flex items-center justify-center">
             {cameraOpen && (
               <CameraScanner
                 onScan={(res) => {
