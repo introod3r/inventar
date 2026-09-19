@@ -24,6 +24,10 @@ import {
   MapPin,
   Camera,
   Warehouse,
+  MoreHorizontal,
+  MoreVertical,
+  ShoppingCart,
+  Copy,
 } from "lucide-react";
 import { formatRSD } from "@/lib/format";
 import {
@@ -40,6 +44,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
@@ -49,6 +59,7 @@ import { toast } from "sonner";
 import { ImportAssetsDialog } from "@/components/assets/ImportAssetsDialog";
 import { PrintQrDialog } from "@/components/assets/PrintQrDialog";
 import { CameraScanner } from "@/components/scanner/CameraScanner";
+import { useScanCart } from "@/features/cart/use-scan-cart";
 
 type AssetStatus = Database["public"]["Enums"]["asset_status"];
 const STATUSES: AssetStatus[] = [
@@ -116,6 +127,17 @@ const STATUS_CONFIG: Record<
   },
 };
 
+const STATUS_CHIPS: Array<{ key: AssetStatus | "all"; label: string }> = [
+  { key: "all", label: "Sve" },
+  { key: "available", label: "Dostupno" },
+  { key: "at_event", label: "Na događaju" },
+  { key: "in_service", label: "Na servisu" },
+  { key: "damaged", label: "Oštećeno" },
+  { key: "in_transit", label: "U transportu" },
+  { key: "reserved", label: "Rezervisano" },
+  { key: "returned", label: "Vraćeno" },
+];
+
 function assetPhotoUrl(path: string) {
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
@@ -149,6 +171,7 @@ export default function AssetsList() {
   const [qrDialogTitle, setQrDialogTitle] = useState<string>("");
 
   const qc = useQueryClient();
+  const scanCart = useScanCart();
 
   useEffect(() => {
     const loc = searchParams.get("location") || "all";
@@ -163,6 +186,31 @@ export default function AssetsList() {
     if (val === "all") next.delete("location");
     else next.set("location", val);
     setSearchParams(next);
+  };
+
+  const handleAddToCart = (a: { id: string; code: string; name: string; serial_number?: string | null }) => {
+    const added = scanCart.add({ id: a.id, code: a.code, name: a.name, serial_number: a.serial_number });
+    if (added) {
+      toast.success(`„${a.name}” dodat u korpu za izdavanje`);
+    } else {
+      toast.info(`„${a.name}” je već u korpi`);
+    }
+  };
+
+  const handleAddSelectedToCart = () => {
+    const selectedAssets = (assets ?? []).filter((a) => selected.has(a.id));
+    let count = 0;
+    selectedAssets.forEach((a) => {
+      if (scanCart.add({ id: a.id, code: a.code, name: a.name, serial_number: a.serial_number })) {
+        count++;
+      }
+    });
+    if (count > 0) {
+      toast.success(`Dodato ${count} stavki u korpu za izdavanje`);
+      clearSelection();
+    } else {
+      toast.info("Izabrane stavke se već nalaze u korpi");
+    }
   };
 
   const { data: categories } = useQuery({
@@ -314,6 +362,18 @@ export default function AssetsList() {
     });
   }, [assets, sortField, sortDesc]);
 
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: assets?.length ?? 0 };
+    (assets ?? []).forEach((a) => {
+      counts[a.status] = (counts[a.status] ?? 0) + 1;
+    });
+    return counts;
+  }, [assets]);
+
+  const totalValue = useMemo(() => {
+    return (sortedAssets ?? []).reduce((acc, a) => acc + (a.current_value ?? 0), 0);
+  }, [sortedAssets]);
+
   const toggle = (id: string) => {
     setSelected((s) => {
       const next = new Set(s);
@@ -402,19 +462,30 @@ export default function AssetsList() {
         title="Oprema"
         description="Sva osnovna sredstva i event oprema"
         actions={
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={onPrintAll} className="border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10">
-              <Printer className="mr-2 h-4 w-4" /> Štampaj sve QR
-            </Button>
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" /> Uvoz CSV/XML
-            </Button>
-            <Button variant="outline" onClick={onExportCsv}>
-              <FileDown className="mr-2 h-4 w-4" /> Izvoz CSV
-            </Button>
-            <Button asChild>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-1.5 h-9.5 text-sm">
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  <span className="hidden sm:inline">Alati i Izvoz</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={onPrintAll} className="cursor-pointer">
+                  <Printer className="mr-2 h-4 w-4 text-cyan-500" /> Štampaj sve QR
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setImportOpen(true)} className="cursor-pointer">
+                  <Upload className="mr-2 h-4 w-4 text-blue-500" /> Uvoz CSV/XML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportCsv} className="cursor-pointer">
+                  <FileDown className="mr-2 h-4 w-4 text-emerald-500" /> Izvoz CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button asChild className="gap-1.5 h-9.5 text-sm shadow-sm">
               <Link to="/assets/new">
-                <Plus className="mr-2 h-4 w-4" /> Nova oprema
+                <Plus className="h-4 w-4" /> <span>Nova oprema</span>
               </Link>
             </Button>
           </div>
@@ -422,7 +493,7 @@ export default function AssetsList() {
       />
 
       {/* Top Filter & Toolbar Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
@@ -537,16 +608,65 @@ export default function AssetsList() {
         </div>
       </div>
 
+      {/* Horizontal Touch-Friendly Quick Status Chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none">
+        {STATUS_CHIPS.map((chip) => {
+          const isActive = status === chip.key;
+          const count = statusCounts[chip.key] ?? 0;
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => setStatus(chip.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                isActive
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-slate-900/60 hover:bg-slate-800/80 text-muted-foreground hover:text-foreground border-slate-800"
+              }`}
+            >
+              <span>{chip.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-semibold ${
+                  isActive
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-slate-800 text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* KPI & Summary Bar */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground px-1 pb-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span>
+            Prikazano: <strong className="text-foreground font-semibold">{sortedAssets.length}</strong> od <span className="font-mono">{assets?.length ?? 0}</span> artikala
+          </span>
+          <span className="hidden sm:inline text-slate-700">•</span>
+          <span className="hidden sm:inline">
+            Ukupna vrednost: <strong className="text-foreground font-mono font-semibold">{formatRSD(totalValue)}</strong>
+          </span>
+        </div>
+        {selected.size > 0 && (
+          <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary text-[11px] font-semibold">
+            {selected.size} izabrano
+          </Badge>
+        )}
+      </div>
+
       {/* Active Location Filter Badge */}
       {location !== "all" && (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <Badge variant="secondary" className="gap-1.5 py-1 px-2.5 text-xs bg-muted/80 border">
             <Warehouse className="h-3.5 w-3.5 text-primary" />
             <span>Lokacija: <strong>{locations?.find((l) => l.id === location)?.name || "Izabrana lokacija"}</strong></span>
             <button
               type="button"
               onClick={() => handleLocationChange("all")}
-              className="ml-1 hover:text-destructive text-muted-foreground"
+              className="ml-1 hover:text-destructive text-muted-foreground cursor-pointer"
               title="Ukloni filter lokacije"
             >
               <X className="h-3 w-3" />
@@ -560,8 +680,17 @@ export default function AssetsList() {
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 p-2.5 px-4 text-sm shadow-sm backdrop-blur-md">
           <span className="font-semibold text-primary">{selected.size} izabrano</span>
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAddSelectedToCart}
+              className="h-8.5 text-xs rounded-lg border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20"
+            >
+              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> U korpu ({selected.size})
+            </Button>
+
             <Select onValueChange={(val) => updateStatus.mutate(val as AssetStatus)}>
-              <SelectTrigger className="h-8.5 w-40 bg-background text-xs rounded-lg">
+              <SelectTrigger className="h-8.5 w-36 bg-background text-xs rounded-lg">
                 <SelectValue placeholder="Promeni status" />
               </SelectTrigger>
               <SelectContent>
@@ -579,7 +708,7 @@ export default function AssetsList() {
               onClick={() => setBulkMoveOpen(true)}
               className="h-8.5 text-xs rounded-lg border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20"
             >
-              <MapPin className="mr-1.5 h-3.5 w-3.5" /> Premesti ({selected.size})
+              <MapPin className="mr-1.5 h-3.5 w-3.5" /> Premesti
             </Button>
 
             <Button
@@ -588,7 +717,7 @@ export default function AssetsList() {
               onClick={onPrintSelected}
               className="h-8.5 text-xs rounded-lg border-cyan-500/40 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20"
             >
-              <Printer className="mr-2 h-3.5 w-3.5" /> QR nalepnice ({selected.size})
+              <Printer className="mr-1.5 h-3.5 w-3.5" /> QR nalepnice
             </Button>
             <Button
               size="sm"
@@ -627,6 +756,7 @@ export default function AssetsList() {
               .locations;
             const isSel = selected.has(a.id);
             const statusCfg = STATUS_CONFIG[a.status] ?? STATUS_CONFIG.available;
+            const categoryName = (a as unknown as { categories?: { name: string } | null }).categories?.name;
 
             return (
               <Link
@@ -671,9 +801,11 @@ export default function AssetsList() {
                     <span>{statusCfg.label}</span>
                   </div>
 
-                  {/* Multi-select check icon overlay on hover/select */}
-                  <div
-                    className="absolute bottom-2.5 left-2.5 p-1 rounded-lg bg-black/50 backdrop-blur-xs hover:bg-black/80 transition cursor-pointer"
+                  {/* Multi-select check icon overlay with ergonomic touch area */}
+                  <button
+                    type="button"
+                    aria-label={`Izaberi ${a.name}`}
+                    className="absolute bottom-2.5 left-2.5 h-9 w-9 rounded-lg bg-black/60 backdrop-blur-xs flex items-center justify-center hover:bg-black/80 transition cursor-pointer z-10"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -684,23 +816,82 @@ export default function AssetsList() {
                       className={`h-5 w-5 rounded-md border flex items-center justify-center transition ${
                         isSel
                           ? "bg-primary border-primary text-primary-foreground"
-                          : "border-white/40 bg-black/40 hover:border-white/80"
+                          : "border-white/50 bg-black/40 hover:border-white"
                       }`}
                     >
                       {isSel && <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={3} />}
                     </div>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Card Info Content */}
                 <div className="p-4 flex flex-col flex-1 justify-between gap-3">
                   <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[11px] font-semibold text-primary/80 uppercase tracking-wider truncate">
+                        {categoryName || "Oprema"}
+                      </span>
+                      {/* 3-Dots Quick Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-slate-800/80 rounded-md -mr-1 transition cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart(a);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <ShoppingCart className="mr-2 h-4 w-4 text-emerald-500" /> Dodaj u korpu
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setQrPrintItems([{ code: a.code, name: a.name, serial: a.serial_number }]);
+                              setQrDialogTitle(`Štampa QR Nalepnice (${a.code})`);
+                              setQrPrintOpen(true);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Printer className="mr-2 h-4 w-4 text-cyan-500" /> Štampaj QR nalepnicu
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(a.code);
+                              toast.success(`Kopirana šifra: ${a.code}`);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Copy className="mr-2 h-4 w-4 text-slate-400" /> Kopiraj šifru
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
                     <h3 className="font-bold text-slate-100 text-base tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
                       {a.name}
                     </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 mt-1.5 min-h-8 leading-relaxed">
-                      {a.description || "Nema unetog opisa za ovaj komad opreme."}
-                    </p>
+                    {a.description ? (
+                      <p className="text-xs text-slate-400 line-clamp-1 mt-1 leading-relaxed">
+                        {a.description}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2 pt-2 text-xs border-t border-slate-800/80">
@@ -793,7 +984,7 @@ export default function AssetsList() {
                   ))}
               </div>
               <div
-                className="col-span-2 text-right cursor-pointer select-none flex items-center justify-end gap-1 hover:text-foreground transition-colors"
+                className="col-span-1 text-center cursor-pointer select-none flex items-center justify-center gap-1 hover:text-foreground transition-colors"
                 onClick={() => handleSort("status")}
               >
                 Status
@@ -804,11 +995,15 @@ export default function AssetsList() {
                     <ChevronUp className="h-3.5 w-3.5" />
                   ))}
               </div>
+              <div className="col-span-1 text-right">
+                Akcije
+              </div>
             </div>
             {sortedAssets.map((a) => {
               const loc = (a as unknown as { locations: { name: string } | null })
                 .locations;
               const isSel = selected.has(a.id);
+              const categoryName = (a as unknown as { categories?: { name: string } | null }).categories?.name;
               return (
                 <Link
                   key={a.id}
@@ -845,7 +1040,7 @@ export default function AssetsList() {
                       )}
                     </div>
                   </div>
-                  <div className="col-span-10 md:col-span-3 flex items-center gap-3 min-w-0">
+                  <div className="col-span-8 md:col-span-3 flex items-center gap-3 min-w-0">
                     <div className="h-14 w-14 md:h-12 md:w-12 flex-none overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
                       {a.thumbnail_path ? (
                         <img
@@ -866,6 +1061,11 @@ export default function AssetsList() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
+                      {categoryName && (
+                        <span className="text-[10px] font-semibold text-primary/80 uppercase tracking-wider block md:hidden">
+                          {categoryName}
+                        </span>
+                      )}
                       <div className="truncate font-medium">{a.name}</div>
                       <div className="truncate text-xs text-muted-foreground font-mono md:hidden">
                         {a.code}
@@ -895,8 +1095,60 @@ export default function AssetsList() {
                   <div className="hidden md:block col-span-2 text-sm font-mono">
                     {formatRSD(a.current_value ?? null)}
                   </div>
-                  <div className="hidden md:block col-span-2 text-right">
+                  <div className="hidden md:block col-span-1 text-center">
                     <AssetStatusBadge status={a.status} />
+                  </div>
+                  <div className="col-span-2 md:col-span-1 flex items-center justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(a);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <ShoppingCart className="mr-2 h-4 w-4 text-emerald-500" /> Dodaj u korpu
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setQrPrintItems([{ code: a.code, name: a.name, serial: a.serial_number }]);
+                            setQrDialogTitle(`Štampa QR Nalepnice (${a.code})`);
+                            setQrPrintOpen(true);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Printer className="mr-2 h-4 w-4 text-cyan-500" /> Štampaj QR
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(a.code);
+                            toast.success(`Kopirana šifra: ${a.code}`);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Copy className="mr-2 h-4 w-4 text-slate-400" /> Kopiraj šifru
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </Link>
               );
