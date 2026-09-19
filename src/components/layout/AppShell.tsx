@@ -22,6 +22,7 @@ import {
   Tags,
   Activity,
   Building2,
+  Cpu,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -145,6 +146,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <NavLink to="/settings/company" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <Building2 className="w-5 h-5 text-indigo-500" /> Profil Firme
                 </NavLink>
+                <NavLink to="/settings/infosys" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <Cpu className="w-5 h-5 text-sky-500" /> InfoSys ERP
+                </NavLink>
                 <NavLink to="/settings/categories" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <Tags className="w-5 h-5" /> Šifarnici
                 </NavLink>
@@ -200,6 +204,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       Admin
                     </div>
                     <SideLink item={{ to: "/settings/company", label: "Profil Firme", icon: Building2, color: "text-indigo-500", bg: "bg-indigo-500/15" }} onClick={() => setMobileOpen(false)} />
+                    <SideLink item={{ to: "/settings/infosys", label: "InfoSys ERP", icon: Cpu, color: "text-sky-500", bg: "bg-sky-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/users", label: "Korisnici", icon: Users, color: "text-blue-500", bg: "bg-blue-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/audit-log", label: "Istorija izmena", icon: History, color: "text-amber-500", bg: "bg-amber-500/15" }} onClick={() => setMobileOpen(false)} />
                     <SideLink item={{ to: "/settings/api-keys", label: "API ključevi", icon: Settings, color: "text-slate-500", bg: "bg-slate-500/15" }} onClick={() => setMobileOpen(false)} />

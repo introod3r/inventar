@@ -208,6 +208,23 @@ Statusi definisani u `src/lib/status.ts`:
   - Analitički vidžet iskorišćenosti opreme po kategorijama (% angažovane tehnike na terenu naspram dostupne u magacinu).
   - Top 10 najkorišćenije opreme i kompletan finansijski CSV izvoz.
 
+### M. Integracija sa Poslovnim Softverom InfoSys (ERP Integration)
+- Putanja: `/settings/infosys`, `src/pages/SettingsInfosys.tsx`.
+- Biblioteka i klijent: `src/lib/integrations/infosys/` (`client.ts`, `types.ts`, `imp-txt-converter.ts`), `src/features/integrations/use-infosys-settings.ts`.
+- Arhitektura povezivanja:
+  - **InfoSys API Server (.NET 4.0 IIS / Abyss):** REST JSON komunikacija sa Visual FoxPro DBF bazom preduzeća preko fiksnog porta ili lokalne mreže uz API Bearer autorizaciju.
+  - **Režim simulacije (Demo / Offline Mock):** Ugrađeni realistični dataset srpskih privrednih subjekata i audio/video/rasveta opreme za razvoj i testiranje bez aktivnog Windows servera.
+  - **Modul `OS` (Osnovna sredstva):**
+    - Sinhronizacija inventarskih brojeva, nabavne vrednosti, sadašnje knjigovodstvene vrednosti i stope amortizacije (`stopaAmortizacije`) direktno u katalog opreme (`assets`).
+  - **Modul `FIN_KD` (Kupci i dobavljači):**
+    - Dvosmerno preuzimanje šifarnika partnera, PIB-a, Matičnog broja, adrese sedišta i kontakata u tabelu klijenata (`clients`).
+  - **Modul `ROB` / `X-STOCK_B` (Robno i magacinsko poslovanje):**
+    - Slanje reversa i zadužene opreme direktno u InfoSys kao magacinski dokument zaduženja.
+  - **Modul `IMP_TXT` (Offline razmena bez interneta):**
+    - Formatirani generator CSV fajlova sa standardnim separatorom tačka-zarez (`;`) za direktan import kroz desktop aplikaciju InfoSys FoxWin (`INFOSYS_OS_*.csv`, `INFOSYS_PARTNERI_*.csv`).
+  - **Dijagnostika & Dnevnik rada:**
+    - Merenje mrežnog odziva (ping latency u milisekundama), detekcija verzije servera i baze podataka, kao i revizorski trag (audit log) prethodnih razmena.
+
 ---
 
 ## 5. Razvoj i Verifikacija
