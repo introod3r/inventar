@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
   LayoutGrid,
   List as ListIcon,
   MapPin,
+  Camera,
+  Warehouse,
 } from "lucide-react";
 import { formatRSD } from "@/lib/format";
 import {
@@ -31,12 +33,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 import { type QrItem } from "@/lib/qr-print";
 import { exportCsv } from "@/lib/csv";
 import { toast } from "sonner";
 import { ImportAssetsDialog } from "@/components/assets/ImportAssetsDialog";
 import { PrintQrDialog } from "@/components/assets/PrintQrDialog";
+import { CameraScanner } from "@/components/scanner/CameraScanner";
 
 type AssetStatus = Database["public"]["Enums"]["asset_status"];
 const STATUSES: AssetStatus[] = [
@@ -115,12 +127,19 @@ function assetPhotoUrl(path: string) {
 type SortField = "name" | "code" | "locations" | "current_value" | "status";
 
 export default function AssetsList() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const locationParam = searchParams.get("location") || "all";
+
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<AssetStatus | "all">("all");
   const [category, setCategory] = useState<string>("all");
+  const [location, setLocation] = useState<string>(locationParam);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [targetLocationId, setTargetLocationId] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDesc, setSortDesc] = useState(false);
 
@@ -130,6 +149,21 @@ export default function AssetsList() {
   const [qrDialogTitle, setQrDialogTitle] = useState<string>("");
 
   const qc = useQueryClient();
+
+  useEffect(() => {
+    const loc = searchParams.get("location") || "all";
+    if (loc !== location) {
+      setLocation(loc);
+    }
+  }, [searchParams, location]);
+
+  const handleLocationChange = (val: string) => {
+    setLocation(val);
+    const next = new URLSearchParams(searchParams);
+    if (val === "all") next.delete("location");
+    else next.set("location", val);
+    setSearchParams(next);
+  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -143,8 +177,20 @@ export default function AssetsList() {
     },
   });
 
+  const { data: locations } = useQuery({
+    queryKey: ["locations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id, name, type")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const { data: assets, isLoading } = useQuery({
-    queryKey: ["assets", q, status, category],
+    queryKey: ["assets", q, status, category, location],
     queryFn: async () => {
       let query = supabase
         .from("assets")
@@ -156,6 +202,7 @@ export default function AssetsList() {
 
       if (status !== "all") query = query.eq("status", status);
       if (category !== "all") query = query.eq("category_id", category);
+      if (location !== "all") query = query.eq("current_location_id", location);
       if (q.trim()) {
         const term = q.trim();
         query = query.or(
@@ -204,7 +251,27 @@ export default function AssetsList() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       clearSelection();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const moveLocation = useMutation({
+    mutationFn: async (targetId: string) => {
+      const ids = Array.from(selected);
+      const { error } = await supabase
+        .from("assets")
+        .update({ current_location_id: targetId || null })
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(`Uspešno premešteno ${selected.size} stavki na novu lokaciju`);
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["locations-asset-counts"] });
+      setBulkMoveOpen(false);
+      setTargetLocationId("");
+      clearSelection();
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
 
   const allIds = useMemo(() => assets?.map((a) => a.id) ?? [], [assets]);
@@ -283,6 +350,7 @@ export default function AssetsList() {
       .order("code", { ascending: true });
     if (status !== "all") query = query.eq("status", status);
     if (category !== "all") query = query.eq("category_id", category);
+    if (location !== "all") query = query.eq("current_location_id", location);
     if (q.trim()) {
       const term = q.trim();
       query = query.or(
@@ -356,13 +424,36 @@ export default function AssetsList() {
       {/* Top Filter & Toolbar Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Pretraži po nazivu, šifri, serijskom broju ili QR kodu…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="pl-10 bg-slate-900/60 border-slate-800 focus-visible:ring-primary/50 text-sm h-10 rounded-lg"
+            className="pl-10 pr-20 bg-slate-900/60 border-slate-800 focus-visible:ring-primary/50 text-sm h-10 rounded-lg"
           />
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+            {q && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => setQ("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-primary hover:bg-primary/10"
+              onClick={() => setCameraOpen(true)}
+              title="Skeniraj barkod ili QR kod opreme kamerom"
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -370,7 +461,7 @@ export default function AssetsList() {
             value={status}
             onValueChange={(v) => setStatus(v as AssetStatus | "all")}
           >
-            <SelectTrigger className="w-full sm:w-44 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
+            <SelectTrigger className="w-full sm:w-40 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
               <SelectValue placeholder="Svi Statusi" />
             </SelectTrigger>
             <SelectContent>
@@ -384,7 +475,7 @@ export default function AssetsList() {
           </Select>
 
           <Select value={category} onValueChange={(v) => setCategory(v)}>
-            <SelectTrigger className="w-full sm:w-48 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
+            <SelectTrigger className="w-full sm:w-44 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
               <SelectValue placeholder="Sve Kategorije" />
             </SelectTrigger>
             <SelectContent>
@@ -392,6 +483,23 @@ export default function AssetsList() {
               {categories?.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={location} onValueChange={handleLocationChange}>
+            <SelectTrigger className="w-full sm:w-44 bg-slate-900/60 border-slate-800 h-10 rounded-lg text-sm">
+              <div className="flex items-center gap-1.5 truncate">
+                <Warehouse className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Sve Lokacije" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Sve Lokacije</SelectItem>
+              {locations?.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id}>
+                  {loc.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -429,6 +537,24 @@ export default function AssetsList() {
         </div>
       </div>
 
+      {/* Active Location Filter Badge */}
+      {location !== "all" && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1.5 py-1 px-2.5 text-xs bg-muted/80 border">
+            <Warehouse className="h-3.5 w-3.5 text-primary" />
+            <span>Lokacija: <strong>{locations?.find((l) => l.id === location)?.name || "Izabrana lokacija"}</strong></span>
+            <button
+              type="button"
+              onClick={() => handleLocationChange("all")}
+              className="ml-1 hover:text-destructive text-muted-foreground"
+              title="Ukloni filter lokacije"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
+
       {/* Selected Action Bar */}
       {selected.size > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 p-2.5 px-4 text-sm shadow-sm backdrop-blur-md">
@@ -446,6 +572,15 @@ export default function AssetsList() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setBulkMoveOpen(true)}
+              className="h-8.5 text-xs rounded-lg border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20"
+            >
+              <MapPin className="mr-1.5 h-3.5 w-3.5" /> Premesti ({selected.size})
+            </Button>
 
             <Button
               size="sm"
@@ -782,6 +917,77 @@ export default function AssetsList() {
         items={qrPrintItems}
         title={qrDialogTitle}
       />
+
+      {/* Dijalog za pretragu skeniranjem kamerom */}
+      <Dialog open={cameraOpen} onOpenChange={setCameraOpen}>
+        <DialogContent className="max-w-md p-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" /> Skeniranje koda opreme
+            </DialogTitle>
+          </DialogHeader>
+          <div className="rounded-xl overflow-hidden mt-2 bg-black min-h-[300px] flex items-center justify-center">
+            {cameraOpen && (
+              <CameraScanner
+                onScan={(res) => {
+                  const code = typeof res === "string" ? res : res.code;
+                  setQ(code);
+                  setCameraOpen(false);
+                  toast.success(`Očitan kod: ${code}`);
+                }}
+              />
+            )}
+          </div>
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={() => setCameraOpen(false)}>
+              Zatvori
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dijalog za masovno premeštanje na lokaciju */}
+      <Dialog open={bulkMoveOpen} onOpenChange={setBulkMoveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" /> Premesti selektovanu opremu
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              Izaberite novo odredište (magacin, zonu ili vozilo) za <strong>{selected.size}</strong> selektovanih artikala:
+            </p>
+            <div className="space-y-1.5">
+              <Label>Odredišna lokacija</Label>
+              <Select value={targetLocationId} onValueChange={setTargetLocationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite lokaciju..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Nema / Ukloni trenutnu lokaciju —</SelectItem>
+                  {locations?.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setBulkMoveOpen(false)}>
+              Odustani
+            </Button>
+            <Button
+              onClick={() => moveLocation.mutate(targetLocationId === "__none" ? "" : targetLocationId)}
+              disabled={moveLocation.isPending || !targetLocationId}
+            >
+              {moveLocation.isPending ? "Premeštanje u toku..." : "Potvrdi premeštanje"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

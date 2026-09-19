@@ -55,8 +55,13 @@ function isSameDay(d1: Date, d2: Date) {
 const WEEKDAYS = ["Pon", "Uto", "Sre", "Čet", "Pet", "Sub", "Ned"];
 
 export default function CalendarPage() {
-  // View mode: "month" | "timeline" | "agenda"
-  const [view, setView] = useState<"month" | "timeline" | "agenda">("month");
+  // View mode: "month" | "timeline" | "agenda" (defaults to "agenda" on mobile for superior touch ergonomics)
+  const [view, setView] = useState<"month" | "timeline" | "agenda">(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      return "agenda";
+    }
+    return "month";
+  });
 
   // Current Month/Date Navigator State
   const [currentDate, setCurrentDate] = useState(() => new Date());

@@ -168,6 +168,40 @@ Statusi definisani u `src/lib/status.ts`:
     - Mobilni Bluetooth POS štampači preko Web Bluetooth API (`navigator.bluetooth`).
     - Kalibracija i probna štampa testnog slipa u administratorskim podešavanjima (`/settings/company`).
 
+### I. Baza Klijenata (Clients Directory)
+- Putanja: `/clients`, `src/pages/Clients.tsx`.
+- Podržava:
+  - Brzu pretragu po nazivu klijenta, emailu, adresi, PIB/MB broju i imenima/telefonima kontakt osoba.
+  - 1-tap mobilne pozive (`tel:`) sa namenskim `PhoneCall` tasterom i haptičkim odzivom.
+  - Direktno slanje emaila (`mailto:`) i otvaranje lokacije na Google Mapama.
+  - B2B identifikatore: PIB i Matični broj (MB) pravnog lica sa validiranim značkama.
+  - Prikaz broja realizovanih događaja i indikator aktivnih angažovanja na terenu.
+
+### J. Lokacije Opreme (Locations Architecture)
+- Putanja: `/locations`, `src/pages/Locations.tsx`.
+- Podržava:
+  - Proračun i agregaciju broja komada opreme po svakoj lokaciji (`current_location_id`).
+  - 1-klik direktan skok na katalog sa predfiltriranom lokacijom (`/assets?location={id}`).
+  - Pretragu lokacija i filtere po tipu (`warehouse`, `vehicle`, `shelf`, `sector`, `field`, `backstage`, `event_zone`).
+  - Zaštitu od nehotičnog brisanja magacina/vozila ukoliko se na njemu nalazi oprema.
+  - Vizuelno ugnježđavanje podlokacija (roditelj → dete).
+
+### K. Katalog Opreme & Masovne Operacije (Assets Catalog)
+- Putanja: `/assets`, `src/pages/Inventory.tsx`.
+- Podržava:
+  - Filter po Lokaciji usklađen sa URL `?location={id}` query parametrima.
+  - Brzu pretragu skeniranjem barkoda/QR koda direktno sa kamere uređaja (`CameraScanner`).
+  - Masovnu akciju premeštanja selektovane opreme na novu lokaciju (`BulkMoveDialog`).
+  - Masovno menjanje statusa i štampu QR nalepnica.
+
+### L. Izveštaji i Analitika (Reports & BI)
+- Putanja: `/reports`, `src/pages/Reports.tsx`.
+- Podržava:
+  - Finansijski pregled: nabavna vrednost, trenutna vrednost i amortizacija.
+  - Dinamički raspon za kretanje zaduženja: 7 dana, 30 dana, 90 dana i 1 godina.
+  - Analitički vidžet iskorišćenosti opreme po kategorijama (% angažovane tehnike na terenu naspram dostupne u magacinu).
+  - Top 10 najkorišćenije opreme i kompletan finansijski CSV izvoz.
+
 ---
 
 ## 5. Razvoj i Verifikacija

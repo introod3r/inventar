@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   ResponsiveContainer,
   PieChart,
@@ -19,11 +22,8 @@ import {
 } from "recharts";
 import { formatRSD } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet } from "lucide-react";
 import { exportCsv } from "@/lib/csv";
 import { toast } from "sonner";
-
-
 
 import { 
   TrendingUp, 
@@ -31,7 +31,9 @@ import {
   DollarSign, 
   PieChart as PieChartIcon, 
   Activity, 
-  BarChart3 
+  BarChart3,
+  Layers,
+  FileSpreadsheet
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -75,6 +77,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Reports() {
+  const [rangeDays, setRangeDays] = useState<number>(30);
+
   const { data: statusData } = useQuery({
     queryKey: ["report-status"],
     queryFn: async () => {
@@ -110,28 +114,107 @@ export default function Reports() {
   });
 
   const { data: checkoutData } = useQuery({
-    queryKey: ["report-checkouts-30d"],
+    queryKey: ["report-checkouts", rangeDays],
     queryFn: async () => {
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - rangeDays);
       const { data } = await supabase
         .from("checkouts")
         .select("checked_out_at, returned_at")
         .gte("checked_out_at", since.toISOString());
-      const days: Record<string, { date: string; out: number; in: number }> = {};
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0, 10);
-        days[key] = { date: key.slice(5), out: 0, in: 0 };
+
+      if (rangeDays <= 30) {
+        const days: Record<string, { date: string; out: number; in: number }> = {};
+        for (let i = rangeDays - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          days[key] = { date: key.slice(5), out: 0, in: 0 };
+        }
+        (data ?? []).forEach((c) => {
+          const ko = c.checked_out_at?.slice(0, 10);
+          if (ko && days[ko]) days[ko].out += 1;
+          const kr = c.returned_at?.slice(0, 10);
+          if (kr && days[kr]) days[kr].in += 1;
+        });
+        return Object.values(days);
+      } else if (rangeDays <= 90) {
+        const buckets: Record<string, { date: string; out: number; in: number }> = {};
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i * 7);
+          const key = `Ned. ${12 - i}`;
+          buckets[key] = { date: key, out: 0, in: 0 };
+        }
+        (data ?? []).forEach((c) => {
+          if (c.checked_out_at) {
+            const daysAgo = Math.floor((Date.now() - new Date(c.checked_out_at).getTime()) / (1000 * 60 * 60 * 24));
+            const weekIdx = 11 - Math.min(11, Math.floor(daysAgo / 7));
+            const key = `Ned. ${weekIdx + 1}`;
+            if (buckets[key]) buckets[key].out += 1;
+          }
+          if (c.returned_at) {
+            const daysAgo = Math.floor((Date.now() - new Date(c.returned_at).getTime()) / (1000 * 60 * 60 * 24));
+            const weekIdx = 11 - Math.min(11, Math.floor(daysAgo / 7));
+            const key = `Ned. ${weekIdx + 1}`;
+            if (buckets[key]) buckets[key].in += 1;
+          }
+        });
+        return Object.values(buckets);
+      } else {
+        const months: Record<string, { date: string; out: number; in: number }> = {};
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const key = d.toLocaleDateString("sr-RS", { month: "short" });
+          months[key] = { date: key, out: 0, in: 0 };
+        }
+        (data ?? []).forEach((c) => {
+          if (c.checked_out_at) {
+            const key = new Date(c.checked_out_at).toLocaleDateString("sr-RS", { month: "short" });
+            if (months[key]) months[key].out += 1;
+          }
+          if (c.returned_at) {
+            const key = new Date(c.returned_at).toLocaleDateString("sr-RS", { month: "short" });
+            if (months[key]) months[key].in += 1;
+          }
+        });
+        return Object.values(months);
       }
-      (data ?? []).forEach((c) => {
-        const ko = c.checked_out_at?.slice(0, 10);
-        if (ko && days[ko]) days[ko].out += 1;
-        const kr = c.returned_at?.slice(0, 10);
-        if (kr && days[kr]) days[kr].in += 1;
-      });
-      return Object.values(days);
+    },
+  });
+
+  const { data: categoryUtilization } = useQuery({
+    queryKey: ["report-category-utilization"],
+    queryFn: async () => {
+      const { data: categories } = await supabase.from("categories").select("id, name");
+      const { data: assets } = await supabase.from("assets").select("id, category_id, status");
+
+      if (!categories || !assets) return [];
+
+      return categories
+        .map((cat) => {
+          const catAssets = assets.filter((a) => a.category_id === cat.id);
+          const total = catAssets.length;
+          const active = catAssets.filter(
+            (a) => a.status === "at_event" || a.status === "in_transit" || a.status === "reserved"
+          ).length;
+          const inService = catAssets.filter((a) => a.status === "in_service" || a.status === "damaged").length;
+          const available = catAssets.filter((a) => a.status === "available").length;
+          const rate = total > 0 ? Math.round((active / total) * 100) : 0;
+
+          return {
+            id: cat.id,
+            name: cat.name,
+            total,
+            active,
+            available,
+            inService,
+            rate,
+          };
+        })
+        .filter((c) => c.total > 0)
+        .sort((a, b) => b.rate - a.rate);
     },
   });
 
@@ -269,10 +352,45 @@ export default function Reports() {
         </Card>
 
         <Card className="glass-card overflow-hidden">
-          <CardHeader className="bg-muted/40 border-b border-border pb-4">
+          <CardHeader className="bg-muted/40 border-b border-border pb-3 flex flex-row items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Zaduženja i razduženja (30 dana)
+              <Activity className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+              <span>Zaduženja i razduženja</span>
             </CardTitle>
+            <div className="flex items-center gap-1 bg-background/80 p-0.5 rounded-lg border">
+              <Button
+                variant={rangeDays === 7 ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setRangeDays(7)}
+              >
+                7d
+              </Button>
+              <Button
+                variant={rangeDays === 30 ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setRangeDays(30)}
+              >
+                30d
+              </Button>
+              <Button
+                variant={rangeDays === 90 ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setRangeDays(90)}
+              >
+                90d
+              </Button>
+              <Button
+                variant={rangeDays === 365 ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setRangeDays(365)}
+              >
+                1 god.
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="h-85 pt-6 pb-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -286,6 +404,51 @@ export default function Reports() {
                 <Line type="monotone" dataKey="in" name="Vraćeno" stroke="#10b981" strokeWidth={3} dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Iskorišćenost opreme po kategorijama */}
+        <Card className="glass-card overflow-hidden lg:col-span-2">
+          <CardHeader className="bg-muted/40 border-b border-border pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                Iskorišćenost opreme po kategorijama
+              </CardTitle>
+              <span className="text-xs text-muted-foreground">
+                Procenat angažovanih resursa (na terenu ili rezervisano) naspram ukupnog broja komada
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            {!categoryUtilization?.length ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Nema podataka o kategorijama.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {categoryUtilization.map((cat) => (
+                  <div key={cat.id} className="p-3.5 rounded-xl border bg-card/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm text-foreground">{cat.name}</span>
+                      <Badge
+                        variant={cat.rate > 60 ? "default" : cat.rate > 25 ? "secondary" : "outline"}
+                        className="text-xs font-mono font-bold"
+                      >
+                        {cat.rate}% angažovano
+                      </Badge>
+                    </div>
+                    <Progress value={cat.rate} className="h-2" />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-medium pt-0.5">
+                      <span>Ukupno: <strong className="text-foreground">{cat.total} kom.</strong></span>
+                      <span className="text-blue-600 dark:text-blue-400">Na terenu: {cat.active}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">Dostupno: {cat.available}</span>
+                      {cat.inService > 0 && (
+                        <span className="text-rose-600 dark:text-rose-400">Servis: {cat.inService}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
