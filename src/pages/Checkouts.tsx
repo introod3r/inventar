@@ -6,11 +6,13 @@ import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Receipt, Undo2, FileDown, FileSpreadsheet, Package, User, Clock, Search, LayoutGrid, List as ListIcon, X, CalendarDays, CheckCircle2 } from "lucide-react";
+import { Receipt, Undo2, FileDown, FileSpreadsheet, Package, User, Clock, Search, LayoutGrid, List as ListIcon, X, CalendarDays, CheckCircle2, Printer } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/format";
 import { ReturnDialog } from "@/components/checkout/CheckoutDialog";
 import { CheckoutWizard } from "@/components/checkout/CheckoutWizard";
 import { ReturnWizard } from "@/components/checkout/ReturnWizard";
+import { ThermalReversDialog } from "@/components/checkout/ThermalReversDialog";
+import { type ThermalReceiptData } from "@/lib/thermal";
 import { generateReversPdf, downloadBlob } from "@/lib/revers-pdf";
 import { exportCsv } from "@/lib/csv";
 import { toast } from "sonner";
@@ -45,6 +47,8 @@ export default function CheckoutsPage() {
   const [status, setStatus] = useState<"all" | "open" | "closed">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedGroup, setSelectedGroup] = useState<CheckoutRow[] | null>(null);
+  const [thermalData, setThermalData] = useState<ThermalReceiptData | null>(null);
+  const [thermalOpen, setThermalOpen] = useState(false);
   const [params, setParams] = useSearchParams();
 
   useEffect(() => {
@@ -157,6 +161,50 @@ export default function CheckoutsPage() {
     } catch (e) {
       toast.error((e as Error).message);
     }
+  };
+
+  const openThermalRevers = async (group: CheckoutRow[]) => {
+    const c = group[0];
+    const assets = group.map((row) => row.assets).filter(Boolean) as Asset[];
+    if (!assets.length) return;
+    const gId = c.signature_path
+      ? c.signature_path.split("-")[1]?.toUpperCase()
+      : c.id.slice(0, 8);
+
+    let signatureUrl: string | null = null;
+    if (c.signature_path) {
+      try {
+        const { data } = await supabase.storage
+          .from("signatures")
+          .createSignedUrl(c.signature_path, 3600);
+        if (data?.signedUrl) signatureUrl = data.signedUrl;
+      } catch {
+        // ignore
+      }
+    }
+
+    setThermalData({
+      reversCode: `REV-${gId}`,
+      eventName: c.events?.name,
+      clientName: c.events?.clients?.name,
+      checkedOutTo: c.checked_out_to_name || "Preuzimalac",
+      checkedOutAt: formatDateTime(c.checked_out_at),
+      expectedReturnAt: c.expected_return_at
+        ? formatDateTime(c.expected_return_at)
+        : null,
+      conditionOut: c.condition_out,
+      notes: c.notes,
+      signatureDataUrl: signatureUrl,
+      items: assets.map((a) => ({
+        code: a.code,
+        name: a.name,
+        serialNumber: a.serial_number,
+      })),
+      company: {
+        name: "EVENTASSET",
+      },
+    });
+    setThermalOpen(true);
   };
 
   const onExportCsv = () => {
@@ -314,6 +362,13 @@ export default function CheckoutsPage() {
                   }}
                 />
               )}
+              <Button
+                variant="outline"
+                className="border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 font-bold shrink-0 shadow-xs"
+                onClick={() => openThermalRevers(selectedGroup)}
+              >
+                <Printer className="mr-2 h-4 w-4 text-amber-500" /> Termalni Revers
+              </Button>
               <Button 
                 className="bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-900/20 shrink-0"
                 onClick={() => downloadPdfGroup(selectedGroup)}
@@ -333,6 +388,11 @@ export default function CheckoutsPage() {
           />
         )}
         <ReturnWizard open={returnWizardOpen} onOpenChange={(v) => { setReturnWizardOpen(v); qc.invalidateQueries({ queryKey: ["checkouts"] }); }} />
+        <ThermalReversDialog
+          open={thermalOpen}
+          onOpenChange={setThermalOpen}
+          data={thermalData}
+        />
       </PageContainer>
     );
   }
@@ -535,6 +595,11 @@ export default function CheckoutsPage() {
 
       <CheckoutWizard open={wizardOpen} onOpenChange={setWizardOpen} />
       <ReturnWizard open={returnWizardOpen} onOpenChange={setReturnWizardOpen} />
+      <ThermalReversDialog
+        open={thermalOpen}
+        onOpenChange={setThermalOpen}
+        data={thermalData}
+      />
     </PageContainer>
   );
 }

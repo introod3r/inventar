@@ -148,6 +148,23 @@ Statusi definisani u `src/lib/status.ts`:
     - `InventoryPrintReport.tsx`: Zvanično zaglavlje firme na Zapisniku o popisu.
   - **Baza podataka:** Tabela `company_settings` sa RLS politikom (`SELECT` dozvoljen ulogovanima, `INSERT`/`UPDATE` samo administratorima).
 
+### H. Podrška za Termalne Štampače (Thermal Printing Engine)
+- Putanja: `src/lib/thermal/`, `src/components/checkout/ThermalReversDialog.tsx`, `src/components/assets/PrintQrDialog.tsx`.
+- Arhitektura:
+  - **POS Termalni Reversi (Receipts):**
+    - ESC/POS generator za 58mm (32 kolone) i 80mm (48 kolona) stone i prenosne POS štampače.
+    - Memorandum firme, revers identifikator sa QR kodom za brzi povrat jednim skeniranjem, lista zadužene opreme, pravna klauzula, digitalni potpis i auto-cut.
+    - `ThermalReversDialog.tsx`: Realističan grafički prikaz POS papirne trake sa zupčastim rubom i instant tasterima za štampu.
+  - **Termalne Nalepnice za Opremu (Labels):**
+    - TSPL generator (TSC, Xprinter, Zebra-kompatibilni štampači).
+    - Standardne dimenzije nalepnica: 50x30mm, 58x40mm, 60x40mm, 40x25mm, 80x50mm.
+    - QR kod, 1D Code128 barkod ili kombinovano.
+  - **Univerzalna Kompatibilnost & Hardverska Povezanost:**
+    - Zero-install: Optimizovan CSS `@page` zero-margin monohromatski renderer za 100% uređaja (uključujući iOS Safari i mobilne telefone).
+    - Direktno USB povezivanje preko Web Serial API (`navigator.serial`).
+    - Mobilni Bluetooth POS štampači preko Web Bluetooth API (`navigator.bluetooth`).
+    - Kalibracija i probna štampa testnog slipa u administratorskim podešavanjima (`/settings/company`).
+
 ---
 
 ## 5. Razvoj i Verifikacija

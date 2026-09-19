@@ -5,8 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Printer, QrCode, Layers, Eye, Check, Settings2 } from "lucide-react";
+import { Printer, QrCode, Layers, Eye, Check, Settings2, Usb } from "lucide-react";
 import { printQrSheet, generateQrDataUrl, type QrItem, type QrLayout, type QrPrintOptions } from "@/lib/qr-print";
+import {
+  THERMAL_LABEL_DIMENSIONS,
+  type ThermalLabelSize,
+  buildTsplLabels,
+  printViaWebSerial,
+  isWebSerialSupported,
+} from "@/lib/thermal";
 import { useCompanySettings } from "@/features/company/use-company-settings";
 import { toast } from "sonner";
 
@@ -20,6 +27,9 @@ interface PrintQrDialogProps {
 export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialogProps) {
   const { settings: companySettings } = useCompanySettings();
   const [layout, setLayout] = useState<QrLayout>("a4_24");
+  const [thermalSize, setThermalSize] = useState<ThermalLabelSize>(
+    (companySettings.thermal_label_size as ThermalLabelSize) || "50x30"
+  );
   const [showCode, setShowCode] = useState(true);
   const [showName, setShowName] = useState(true);
   const [showSerial, setShowSerial] = useState(true);
@@ -30,9 +40,14 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
   const [isPrinting, setIsPrinting] = useState(false);
   const [previewQrUrl, setPreviewQrUrl] = useState<string>("");
 
+  const isThermal = layout.startsWith("thermal_");
+
   useEffect(() => {
     if (companySettings) {
       setCompanyName(companySettings.qr_label_company_text || companySettings.short_name || "INVENTAR");
+      if (companySettings.thermal_label_size) {
+        setThermalSize(companySettings.thermal_label_size as ThermalLabelSize);
+      }
     }
   }, [companySettings]);
 
@@ -59,7 +74,7 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
     setIsPrinting(true);
     try {
       const options: QrPrintOptions = {
-        layout,
+        layout: isThermal ? (`thermal_${thermalSize}` as QrLayout) : layout,
         showCode,
         showName,
         showSerial,
@@ -71,6 +86,38 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
       onOpenChange(false);
     } catch (err) {
       toast.error(`Greška pri štampanju: ${(err as Error).message}`);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleTsplPrint = async () => {
+    if (!items.length) return;
+    if (!isWebSerialSupported()) {
+      toast.error("Web Serial API nije podržan u ovom pregledaču. Koristite Chrome ili Edge.");
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      const bytes = buildTsplLabels(
+        items.map((it) => ({
+          code: it.code || "BEZ-KODA",
+          name: it.name || "Artikl",
+          serialNumber: it.serial,
+          companyName: companyName.trim(),
+        })),
+        { size: thermalSize }
+      );
+      const res = await printViaWebSerial(bytes);
+      if (res.success) {
+        toast.success(res.message || "Uspešno poslato na štampač nalepnica.");
+        onOpenChange(false);
+      } else if (res.message) {
+        toast.info(res.message);
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
     } finally {
       setIsPrinting(false);
     }
@@ -170,27 +217,65 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
               {/* Option C: Thermal Single Label */}
               <button
                 type="button"
-                onClick={() => setLayout("thermal_single")}
+                onClick={() => {
+                  setLayout(`thermal_${thermalSize}` as QrLayout);
+                }}
                 className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between gap-2 ${
-                  layout === "thermal_single"
+                  isThermal
                     ? "border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/30 text-slate-900 dark:text-slate-100"
                     : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
-                {layout === "thermal_single" && (
+                {isThermal && (
                   <div className="absolute top-2.5 right-2.5 h-5 w-5 rounded-full bg-cyan-500 text-white flex items-center justify-center">
                     <Check className="w-3 h-3 stroke-3" />
                   </div>
                 )}
                 <div>
                   <div className="font-bold text-sm">Termalni štampač</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Rolna (Zebra, Brother...)</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Rolna (TSC, Xprinter, Zebra...)</div>
                 </div>
                 <div className="text-[11px] font-mono text-cyan-600 dark:text-cyan-400 font-semibold pt-1 border-t border-slate-200/60 dark:border-slate-800">
-                  Dimenzija: 58 x 40 mm
+                  Dimenzija: {THERMAL_LABEL_DIMENSIONS[thermalSize].name}
                 </div>
               </button>
             </div>
+
+            {/* Sub-selector for standard thermal label sizes */}
+            {isThermal && (
+              <div className="pt-2 p-3.5 bg-cyan-50/50 dark:bg-cyan-950/20 rounded-xl border border-cyan-200/60 dark:border-cyan-900/40">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Izaberite standardnu dimenziju nalepnice:</span>
+                  <span className="font-mono text-cyan-700 dark:text-cyan-400 font-bold">
+                    {THERMAL_LABEL_DIMENSIONS[thermalSize].widthMm} × {THERMAL_LABEL_DIMENSIONS[thermalSize].heightMm} mm
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {(Object.keys(THERMAL_LABEL_DIMENSIONS) as ThermalLabelSize[]).map((sz) => {
+                    const dim = THERMAL_LABEL_DIMENSIONS[sz];
+                    const selected = thermalSize === sz;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => {
+                          setThermalSize(sz);
+                          setLayout(`thermal_${sz}` as QrLayout);
+                        }}
+                        className={`p-2.5 rounded-lg border text-center transition-all ${
+                          selected
+                            ? "border-cyan-500 bg-cyan-500/20 text-cyan-800 dark:text-cyan-200 font-bold ring-1 ring-cyan-500/40 shadow-xs"
+                            : "border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 hover:border-slate-300 text-slate-700 dark:text-slate-300 text-xs"
+                        }`}
+                      >
+                        <div className="text-xs font-mono font-bold">{dim.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate mt-0.5">{dim.description.split(" ")[0]}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 2: Layout & Field Customization + Live Sticker Preview */}
@@ -261,7 +346,20 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
                 </div>
 
                 {/* Sticker Mockup Card */}
-                <div className="bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-slate-300 flex items-center gap-4 max-w-sm w-full transition-all duration-300 transform hover:scale-102">
+                <div
+                  className="bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-slate-300 flex items-center gap-4 w-full transition-all duration-300 transform hover:scale-102"
+                  style={{
+                    maxWidth: isThermal
+                      ? thermalSize === "80x50"
+                        ? "420px"
+                        : thermalSize === "40x25"
+                        ? "280px"
+                        : thermalSize === "50x30"
+                        ? "320px"
+                        : "360px"
+                      : "380px",
+                  }}
+                >
                   {previewQrUrl ? (
                     <img src={previewQrUrl} alt="QR Sample" className="w-20 h-20 object-contain shrink-0 rounded border border-slate-200 p-0.5" />
                   ) : (
@@ -304,7 +402,7 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
             Spremano za štampu: <span className="font-bold text-slate-800 dark:text-slate-200">{items.length} nalepnica</span>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
@@ -314,11 +412,25 @@ export function PrintQrDialog({ open, onOpenChange, items, title }: PrintQrDialo
               Odustani
             </Button>
 
+            {isThermal && isWebSerialSupported() && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTsplPrint}
+                disabled={isPrinting || !items.length}
+                className="flex-1 sm:flex-none border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 font-semibold text-xs gap-1.5"
+                title="Direktno USB slanje TSPL komandi"
+              >
+                <Usb className="w-3.5 h-3.5 text-amber-500" />
+                Direktno TSPL (USB)
+              </Button>
+            )}
+
             <Button
               type="button"
               onClick={handlePrint}
               disabled={isPrinting || !items.length}
-              className="flex-1 sm:flex-none bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold px-6 shadow-lg shadow-cyan-900/20"
+              className="flex-1 sm:flex-none bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold px-5 shadow-lg shadow-cyan-900/20"
             >
               <Printer className="w-4 h-4 mr-2" />
               {isPrinting ? "Pripremam štampu..." : `Štampaj nalepnice (${items.length})`}

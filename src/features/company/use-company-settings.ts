@@ -27,6 +27,12 @@ export type CompanySettings = {
   depreciation_rate: number;
   qr_label_company_text: string;
   show_value_on_revers: boolean;
+  thermal_printer_enabled?: boolean;
+  thermal_roll_width?: 58 | 80;
+  thermal_label_size?: "50x30" | "58x40" | "60x40" | "40x25" | "80x50";
+  thermal_connection_mode?: "browser" | "serial" | "bluetooth";
+  thermal_autocut?: boolean;
+  thermal_darkness?: number;
   updated_at?: string;
 };
 
@@ -56,6 +62,12 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   depreciation_rate: 20,
   qr_label_company_text: "EVENTASSET",
   show_value_on_revers: false,
+  thermal_printer_enabled: true,
+  thermal_roll_width: 80,
+  thermal_label_size: "50x30",
+  thermal_connection_mode: "browser",
+  thermal_autocut: true,
+  thermal_darkness: 10,
 };
 
 const STORAGE_KEY = "eventasset.company-settings";

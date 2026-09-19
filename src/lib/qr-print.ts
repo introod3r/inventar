@@ -6,7 +6,15 @@ export interface QrItem {
   serial?: string | null | undefined;
 }
 
-export type QrLayout = "a4_24" | "a4_40" | "thermal_single";
+export type QrLayout =
+  | "a4_24"
+  | "a4_40"
+  | "thermal_single"
+  | "thermal_50x30"
+  | "thermal_58x40"
+  | "thermal_60x40"
+  | "thermal_40x25"
+  | "thermal_80x50";
 
 export interface QrPrintOptions {
   layout?: QrLayout;
@@ -15,6 +23,7 @@ export interface QrPrintOptions {
   showSerial?: boolean;
   showCompany?: boolean;
   companyName?: string;
+  codeType?: "qr" | "barcode" | "both";
 }
 
 function escapeHtml(s: string | null | undefined): string {
@@ -49,20 +58,39 @@ export async function printQrSheet(items: QrItem[], options: QrPrintOptions = {}
   let gridStyle = "";
   let cellStyle = "";
   let pageStyle = "";
+  let isThermal = false;
+  let thermalWidth = 58;
+  let thermalHeight = 40;
 
-  if (layout === "thermal_single") {
-    pageStyle = `@page { size: 58mm 40mm; margin: 0; }`;
+  if (layout.startsWith("thermal_")) {
+    isThermal = true;
+    if (layout === "thermal_50x30") {
+      thermalWidth = 50; thermalHeight = 30;
+    } else if (layout === "thermal_60x40") {
+      thermalWidth = 60; thermalHeight = 40;
+    } else if (layout === "thermal_40x25") {
+      thermalWidth = 40; thermalHeight = 25;
+    } else if (layout === "thermal_80x50") {
+      thermalWidth = 80; thermalHeight = 50;
+    } else {
+      // thermal_single or thermal_58x40
+      thermalWidth = 58; thermalHeight = 40;
+    }
+
+    pageStyle = `@page { size: ${thermalWidth}mm ${thermalHeight}mm; margin: 0; }`;
     gridStyle = `display: flex; flex-direction: column; gap: 0;`;
     cellStyle = `
-      width: 58mm;
-      height: 40mm;
-      padding: 3mm;
+      width: ${thermalWidth}mm;
+      height: ${thermalHeight}mm;
+      padding: ${thermalHeight > 30 ? "2.5mm" : "1.5mm"};
       box-sizing: border-box;
       page-break-after: always;
       display: flex;
       align-items: center;
-      gap: 3mm;
-      border: 1px dashed #cbd5e1;
+      gap: 2mm;
+      border: none;
+      background: #ffffff;
+      color: #000000;
     `;
   } else if (layout === "a4_40") {
     pageStyle = `@page { size: A4 portrait; margin: 6mm; }`;
@@ -116,12 +144,47 @@ export async function printQrSheet(items: QrItem[], options: QrPrintOptions = {}
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #0f172a; }
   .grid { ${gridStyle} }
   .cell { ${cellStyle} }
-  .cell img { width: ${layout === "a4_40" ? "20mm" : "26mm"}; height: ${layout === "a4_40" ? "20mm" : "26mm"}; flex-shrink: 0; }
-  .meta { font-size: ${layout === "a4_40" ? "8pt" : "9pt"}; line-height: 1.25; min-width: 0; flex: 1; }
-  .company { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 2px; }
-  .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: #0284c7; }
-  .name { margin-top: 2px; font-weight: 600; word-break: break-word; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .sn { color: #64748b; font-size: 7.5pt; margin-top: 2px; font-mono; }
+  .cell img {
+    width: ${isThermal ? `${Math.max(16, thermalHeight - 8)}mm` : layout === "a4_40" ? "20mm" : "26mm"};
+    height: ${isThermal ? `${Math.max(16, thermalHeight - 8)}mm` : layout === "a4_40" ? "20mm" : "26mm"};
+    flex-shrink: 0;
+    ${isThermal ? "image-rendering: pixelated;" : ""}
+  }
+  .meta {
+    font-size: ${isThermal ? (thermalHeight > 30 ? "8pt" : "7pt") : layout === "a4_40" ? "8pt" : "9pt"};
+    line-height: 1.2;
+    min-width: 0;
+    flex: 1;
+  }
+  .company {
+    font-size: ${isThermal ? "6.5pt" : "7pt"};
+    font-weight: 700;
+    text-transform: uppercase;
+    color: ${isThermal ? "#000000" : "#64748b"};
+    margin-bottom: 1px;
+  }
+  .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    color: ${isThermal ? "#000000" : "#0284c7"};
+    font-size: ${isThermal ? (thermalHeight > 30 ? "9.5pt" : "8.5pt") : "inherit"};
+  }
+  .name {
+    margin-top: 1px;
+    font-weight: 600;
+    color: ${isThermal ? "#000000" : "#0f172a"};
+    word-break: break-word;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .sn {
+    color: ${isThermal ? "#000000" : "#64748b"};
+    font-size: ${isThermal ? "6.5pt" : "7.5pt"};
+    margin-top: 1px;
+    font-family: monospace;
+  }
 </style></head>
 <body>
   <div class="grid">${cells}</div>

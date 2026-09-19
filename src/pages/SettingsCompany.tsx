@@ -26,8 +26,20 @@ import {
   ShieldAlert,
   Check,
   Receipt,
+  Printer,
+  Usb,
+  Bluetooth,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  type ThermalRollWidth,
+  buildTestSlipEscPos,
+  printThermalReceiptViaBrowser,
+  printViaWebSerial,
+  printViaWebBluetooth,
+  isWebSerialSupported,
+  isWebBluetoothSupported,
+} from "@/lib/thermal";
 
 const BRAND_PALETTES = [
   { label: "Sky Blue", value: "#0ea5e9", class: "bg-sky-500" },
@@ -54,6 +66,7 @@ export default function SettingsCompany() {
 
   const [form, setForm] = useState<CompanySettings>(settings);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isTestingSlip, setIsTestingSlip] = useState(false);
 
   // Keep form in sync when settings load
   useEffect(() => {
@@ -86,6 +99,64 @@ export default function SettingsCompany() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings(form);
+  };
+
+  const handlePrintTestSlip = async (mode: "browser" | "serial" | "bluetooth") => {
+    setIsTestingSlip(true);
+    try {
+      const rollWidth = (form.thermal_roll_width as ThermalRollWidth) || 80;
+      if (mode === "serial") {
+        if (!isWebSerialSupported()) {
+          toast.error("Web Serial API nije podržan u ovom pregledaču. Koristite Chrome ili Edge.");
+          return;
+        }
+        const bytes = buildTestSlipEscPos(form.name, rollWidth);
+        const res = await printViaWebSerial(bytes);
+        if (res.success) toast.success(res.message);
+        else if (res.message) toast.info(res.message);
+      } else if (mode === "bluetooth") {
+        if (!isWebBluetoothSupported()) {
+          toast.error("Web Bluetooth nije podržan u ovom pregledaču. Koristite Chrome ili Android.");
+          return;
+        }
+        const bytes = buildTestSlipEscPos(form.name, rollWidth);
+        const res = await printViaWebBluetooth(bytes);
+        if (res.success) toast.success(res.message);
+        else if (res.message) toast.info(res.message);
+      } else {
+        // Universal browser print test slip
+        await printThermalReceiptViaBrowser(
+          {
+            reversCode: "TEST-PROBA",
+            eventName: "Kalibracija Termalnog Štampača",
+            clientName: form.name,
+            checkedOutTo: "Magacioner / Tehničar",
+            checkedOutAt: new Date().toLocaleString("sr-RS"),
+            expectedReturnAt: "Uspešan test",
+            conditionOut: "Novo / Testirano",
+            items: [
+              { code: "EQ-TEST-001", name: "Primer Opreme: Aktivni Zvučnik", serialNumber: "SN-998811" },
+              { code: "EQ-TEST-002", name: "Primer Opreme: DMX Signalni Kabl 10m", serialNumber: "KBL-01" },
+            ],
+            company: {
+              name: form.name,
+              pib: form.pib,
+              mb: form.mb,
+              address: form.address,
+              city: form.city,
+              phone: form.phone,
+              disclaimer: "Ovo je zvanični probni termalni slip za kalibraciju širine rolne, kontrasta i čitljivosti barkoda.",
+            },
+          },
+          rollWidth
+        );
+        toast.success("Pokrenuta probna štampa testnog slipa.");
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsTestingSlip(false);
+    }
   };
 
   const handleResetDefaults = () => {
@@ -148,7 +219,7 @@ export default function SettingsCompany() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full h-auto p-1 gap-1">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full h-auto p-1 gap-1">
             <TabsTrigger value="profile" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
               <Building2 className="h-4 w-4" />
               <span>Profil & Pravno lice</span>
@@ -164,6 +235,10 @@ export default function SettingsCompany() {
             <TabsTrigger value="inventory" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
               <PackageCheck className="h-4 w-4" />
               <span>Šifarnik & Oprema</span>
+            </TabsTrigger>
+            <TabsTrigger value="thermal" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
+              <Printer className="h-4 w-4 text-amber-500" />
+              <span>Termalni štampač</span>
             </TabsTrigger>
           </TabsList>
 
@@ -631,6 +706,157 @@ export default function SettingsCompany() {
                     <p className="text-[11px] text-muted-foreground">
                       Štampa se u zaglavlju svake nalepnice kofera ili kabla.
                     </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB 5: Termalni Štampač */}
+          <TabsContent value="thermal" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Printer className="h-5 w-5 text-amber-500" />
+                  Konfiguracija Termalnih Štampača
+                </CardTitle>
+                <CardDescription>
+                  Podešavanja za brzu štampu POS revers računa (58mm i 80mm) i nalepnica za opremu (rolna).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Širina POS Rolne */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="thermalRollWidth">Podrazumevana širina rolne za POS revers</Label>
+                    <Select
+                      value={String(form.thermal_roll_width || 80)}
+                      onValueChange={(v) => handleChange("thermal_roll_width", Number(v))}
+                    >
+                      <SelectTrigger id="thermalRollWidth">
+                        <SelectValue placeholder="Izaberite širinu rolne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="80">80 mm — Standardni stoni POS štampač (Epson, Star, Bixolon)</SelectItem>
+                        <SelectItem value="58">58 mm — Mobilni / kompaktni štampač (Sunmi, Rongta, Bluetooth)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Određuje raspored kolona i format štampe za slip zaduženja opreme.
+                    </p>
+                  </div>
+
+                  {/* Format nalepnice */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="thermalLabelSize">Podrazumevana dimenzija nalepnice za opremu</Label>
+                    <Select
+                      value={form.thermal_label_size || "50x30"}
+                      onValueChange={(v) => handleChange("thermal_label_size", v)}
+                    >
+                      <SelectTrigger id="thermalLabelSize">
+                        <SelectValue placeholder="Izaberite format nalepnice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="50x30">50 × 30 mm — Industrijski standard za magacin</SelectItem>
+                        <SelectItem value="58x40">58 × 40 mm — Standardna artikl nalepnica</SelectItem>
+                        <SelectItem value="60x40">60 × 40 mm — Koferi i rek ormani</SelectItem>
+                        <SelectItem value="40x25">40 × 25 mm — Kompaktna etiketa za kablove</SelectItem>
+                        <SelectItem value="80x50">80 × 50 mm — Velika detaljna etiketa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Dimenzija rolne etiketa koja se automatski predlaže pri štampi barkodova.
+                    </p>
+                  </div>
+
+                  {/* Način konekcije */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="thermalConn">Podrazumevani način štampe</Label>
+                    <Select
+                      value={form.thermal_connection_mode || "browser"}
+                      onValueChange={(v) => handleChange("thermal_connection_mode", v)}
+                    >
+                      <SelectTrigger id="thermalConn">
+                        <SelectValue placeholder="Izaberite način konekcije" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="browser">Sistemski dijalog pregledača (Radi na svim uređajima i iOS)</SelectItem>
+                        <SelectItem value="serial">Direktno USB / Virtual COM (Web Serial API)</SelectItem>
+                        <SelectItem value="bluetooth">Bluetooth POS štampač (Web Bluetooth API)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Direktne USB i Bluetooth opcije omogućavaju 1-klik štampu bez sistemskih prozora na Chrome/Edge.
+                    </p>
+                  </div>
+
+                  {/* Opcije štampe */}
+                  <div className="space-y-3 pt-2">
+                    <Label>Napredne opcije hardvera</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="thermalAutocut"
+                          checked={form.thermal_autocut !== false}
+                          onCheckedChange={(v) => handleChange("thermal_autocut", Boolean(v))}
+                        />
+                        <Label htmlFor="thermalAutocut" className="text-sm font-normal cursor-pointer">
+                          Automatsko sečenje papira (ESC/POS Auto-cut)
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Test Slip Section */}
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <Printer className="h-4 w-4 text-amber-500" /> Probna Štampa (Test Slip)
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Odštampajte probni račun da proverite širinu, kontrast i čitljivost barkoda na vašem štampaču.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handlePrintTestSlip("browser")}
+                      disabled={isTestingSlip}
+                      className="text-xs border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      {isTestingSlip ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Printer className="w-3.5 h-3.5 mr-1.5" />}
+                      Štampaj Test Slip (Sistemski)
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handlePrintTestSlip("serial")}
+                      disabled={isTestingSlip}
+                      className="text-xs border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <Usb className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                      Test USB Serial
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handlePrintTestSlip("bluetooth")}
+                      disabled={isTestingSlip}
+                      className="text-xs border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <Bluetooth className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                      Test Bluetooth
+                    </Button>
                   </div>
                 </div>
               </CardContent>
