@@ -263,7 +263,7 @@ export default function SettingsInfosys() {
 
       {/* Top Connection Status Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-sm">
+        <Card className="border-border/60 bg-linear-to-br from-card to-card/50 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
@@ -310,7 +310,7 @@ export default function SettingsInfosys() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-sm">
+        <Card className="border-border/60 bg-linear-to-br from-card to-card/50 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <Database className="w-6 h-6" />
@@ -329,7 +329,7 @@ export default function SettingsInfosys() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-sm">
+        <Card className="border-border/60 bg-linear-to-br from-card to-card/50 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Radio className="w-6 h-6" />
