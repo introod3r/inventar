@@ -201,9 +201,13 @@ export async function generateReversPdf(d: ReversData, customCompany?: CompanySe
   await drawSigBox(315, "Potpis primaoca (razduzivanje opreme)", d.signatureInPath);
 
   // Footer stamp
+  const vendorFooter = company.show_vendor_on_pdf && company.vendor_name
+    ? ` | Powered by ${company.vendor_name} (${company.copyright_text || ''})`
+    : '';
+
   page.drawText(
     sanitize(
-      `Dokument generisan: ${new Date().toLocaleString("sr-RS")} | Softver: ${company.short_name} Inventar`
+      `Dokument generisan: ${new Date().toLocaleString("sr-RS")} | Softver: ${company.short_name} Inventar${vendorFooter}`
     ),
     { x: 40, y: 25, size: 7.5, font, color: muted }
   );

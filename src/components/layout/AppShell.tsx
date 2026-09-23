@@ -166,6 +166,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </nav>
         <UserBlock />
+        <VendorCopyrightFooter />
       </aside>
 
       {/* Mobile top header */}
@@ -212,6 +213,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </>
                 )}
               </nav>
+              <VendorCopyrightFooter />
             </SheetContent>
           </Sheet>
           <Link to="/dashboard" className="flex items-center gap-2 font-semibold truncate max-w-50">
@@ -376,6 +378,53 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+    );
+  }
+
+  function VendorCopyrightFooter({ className = "" }: { className?: string }) {
+    if (companySettings.show_vendor_badge === false) return null;
+
+    const vendorName = companySettings.vendor_name || "Introod3r";
+    const copyright = companySettings.copyright_text || `© ${new Date().getFullYear()} ${vendorName}`;
+
+    return (
+      <div className={`px-4 py-2 border-t border-sidebar-border/60 bg-sidebar/40 text-[11px] text-muted-foreground ${className}`}>
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {companySettings.vendor_logo_url ? (
+              <img
+                src={companySettings.vendor_logo_url}
+                alt={vendorName}
+                className="h-3.5 w-auto max-w-16 object-contain rounded shrink-0"
+              />
+            ) : (
+              <span className="w-3.5 h-3.5 rounded bg-sky-500/15 text-sky-500 font-bold flex items-center justify-center text-[8px] shrink-0">
+                {vendorName[0] || "I"}
+              </span>
+            )}
+            <span className="truncate font-medium text-foreground/85 text-[11px]">{vendorName}</span>
+            {companySettings.app_version_label && (
+              <span className="text-[9px] px-1 py-0.2 rounded bg-muted/80 text-muted-foreground shrink-0 font-mono">
+                {companySettings.app_version_label}
+              </span>
+            )}
+          </div>
+          {companySettings.vendor_url && (
+            <a
+              href={companySettings.vendor_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline shrink-0 text-[10px]"
+              title={`Web sajt proizvođača: ${vendorName}`}
+            >
+              Web
+            </a>
+          )}
+        </div>
+        <div className="mt-0.5 text-[10px] text-muted-foreground/70 truncate">
+          {copyright}
+        </div>
+      </div>
     );
   }
 }

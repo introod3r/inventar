@@ -29,6 +29,13 @@ import {
   Printer,
   Usb,
   Bluetooth,
+  Award,
+  Globe,
+  Mail,
+  Phone,
+  ExternalLink,
+  Sparkles,
+  Code2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -67,6 +74,7 @@ export default function SettingsCompany() {
   const [form, setForm] = useState<CompanySettings>(settings);
   const [activeTab, setActiveTab] = useState("profile");
   const [isTestingSlip, setIsTestingSlip] = useState(false);
+  const [isUploadingVendorLogo, setIsUploadingVendorLogo] = useState(false);
 
   // Keep form in sync when settings load
   useEffect(() => {
@@ -177,13 +185,36 @@ export default function SettingsCompany() {
     }
 
     try {
-      const publicUrl = await uploadLogo(file);
+      const publicUrl = await uploadLogo(file, "logo");
       if (publicUrl) {
         handleChange("logo_url", publicUrl);
         toast.success("Logotip je uspešno otpremljen!");
       }
     } catch (err) {
       toast.error((err as Error).message || "Greška pri otpremanju logotipa.");
+    }
+  };
+
+  const handleVendorLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Izabrana datoteka mora biti slika (PNG, SVG, JPG).");
+      return;
+    }
+
+    setIsUploadingVendorLogo(true);
+    try {
+      const publicUrl = await uploadLogo(file, "vendor-logo");
+      if (publicUrl) {
+        handleChange("vendor_logo_url", publicUrl);
+        toast.success("Logotip proizvođača je uspešno otpremljen!");
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Greška pri otpremanju logotipa proizvođača.");
+    } finally {
+      setIsUploadingVendorLogo(false);
     }
   };
 
@@ -219,7 +250,7 @@ export default function SettingsCompany() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full h-auto p-1 gap-1">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full h-auto p-1 gap-1">
             <TabsTrigger value="profile" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
               <Building2 className="h-4 w-4" />
               <span>Profil & Pravno lice</span>
@@ -239,6 +270,10 @@ export default function SettingsCompany() {
             <TabsTrigger value="thermal" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
               <Printer className="h-4 w-4 text-amber-500" />
               <span>Termalni štampač</span>
+            </TabsTrigger>
+            <TabsTrigger value="vendor" className="flex items-center gap-2 py-2.5 text-xs sm:text-sm">
+              <Award className="h-4 w-4 text-sky-500" />
+              <span>Proizvođač & Copyright</span>
             </TabsTrigger>
           </TabsList>
 
@@ -857,6 +892,274 @@ export default function SettingsCompany() {
                       <Bluetooth className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                       Test Bluetooth
                     </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB 6: Proizvođač Aplikacije i Copyright */}
+          <TabsContent value="vendor" className="mt-6 space-y-6">
+            <Card className="shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Award className="h-5 w-5 text-sky-500" /> Podaci o Proizvođaču / Autoru Aplikacije
+                </CardTitle>
+                <CardDescription>
+                  Definišite podatke o razvojnom timu, kompaniji proizvođača, verziji softvera i tehničkoj podršci.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="vendorName">Naziv proizvođača / kompanije *</Label>
+                    <Input
+                      id="vendorName"
+                      value={form.vendor_name || ""}
+                      onChange={(e) => handleChange("vendor_name", e.target.value)}
+                      placeholder="npr. Introod3r Software"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="vendorUrl">Web sajt proizvođača</Label>
+                    <div className="relative">
+                      <Input
+                        id="vendorUrl"
+                        value={form.vendor_url || ""}
+                        onChange={(e) => handleChange("vendor_url", e.target.value)}
+                        placeholder="npr. https://introod3r.com"
+                        className="pl-9"
+                      />
+                      <Globe className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="vendorEmail">Email za tehničku podršku</Label>
+                    <div className="relative">
+                      <Input
+                        id="vendorEmail"
+                        type="email"
+                        value={form.vendor_support_email || ""}
+                        onChange={(e) => handleChange("vendor_support_email", e.target.value)}
+                        placeholder="npr. support@introod3r.com"
+                        className="pl-9"
+                      />
+                      <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="vendorPhone">Telefon tehničke podrške</Label>
+                    <div className="relative">
+                      <Input
+                        id="vendorPhone"
+                        value={form.vendor_support_phone || ""}
+                        onChange={(e) => handleChange("vendor_support_phone", e.target.value)}
+                        placeholder="npr. +381 11 123 4567"
+                        className="pl-9"
+                      />
+                      <Phone className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="appVersion">Oznaka verzije sistema</Label>
+                    <div className="relative">
+                      <Input
+                        id="appVersion"
+                        value={form.app_version_label || ""}
+                        onChange={(e) => handleChange("app_version_label", e.target.value)}
+                        placeholder="npr. Inventar Enterprise v2.6"
+                        className="pl-9"
+                      />
+                      <Code2 className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Logotip Proizvođača */}
+            <Card className="shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" /> Logotip Proizvođača Softvera
+                </CardTitle>
+                <CardDescription>
+                  Otpremite zvanični amblem ili logotip proizvođača ove aplikacije. Logotip se prikazuje u podnožju bočne trake i na ekranu za prijavu.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl border bg-muted/20">
+                  <div className="w-32 h-32 rounded-2xl bg-card border-2 border-dashed border-border flex items-center justify-center p-3 overflow-hidden shadow-xs relative group">
+                    {form.vendor_logo_url ? (
+                      <img
+                        src={form.vendor_logo_url}
+                        alt="Vendor Logo"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-center space-y-1 text-muted-foreground">
+                        <Award className="w-8 h-8 mx-auto opacity-50 text-sky-500" />
+                        <span className="text-[10px] block">Nema logotipa</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 flex-1 text-center sm:text-left">
+                    <div>
+                      <h4 className="font-semibold text-sm">Datoteka logotipa proizvođača</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Preporučujemo PNG ili SVG format sa transparentnom pozadinom (horizontalni odnos strana).
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="relative cursor-pointer"
+                        disabled={isUploadingVendorLogo}
+                      >
+                        {isUploadingVendorLogo ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="mr-2 h-4 w-4" />
+                        )}
+                        Izaberi sliku logotipa
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleVendorLogoFile}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          disabled={isUploadingVendorLogo}
+                        />
+                      </Button>
+
+                      {form.vendor_logo_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleChange("vendor_logo_url", null)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Ukloni logo
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="vendorLogoUrl">Direktan URL logotipa proizvođača (opciono)</Label>
+                  <Input
+                    id="vendorLogoUrl"
+                    value={form.vendor_logo_url || ""}
+                    onChange={(e) => handleChange("vendor_logo_url", e.target.value || null)}
+                    placeholder="https://introod3r.com/assets/logo.png"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Copyright i Prikaz */}
+            <Card className="shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Code2 className="h-5 w-5 text-primary" /> Autorska Prava (Copyright) & Vidljivost
+                </CardTitle>
+                <CardDescription>
+                  Podesite tekst autorskih prava i odredite mesta na kojima će se prikazivati oznaka proizvođača.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="copyrightText">Copyright tekst *</Label>
+                  <Input
+                    id="copyrightText"
+                    value={form.copyright_text || ""}
+                    onChange={(e) => handleChange("copyright_text", e.target.value)}
+                    placeholder="npr. © 2026 Introod3r. Sva prava zadržana."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ovaj tekst se prikazuje u podnožju aplikacije, na ekranu za prijavu i PDF dokumentima.
+                  </p>
+                </div>
+
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between p-3.5 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showVendorBadge" className="text-sm font-medium cursor-pointer">
+                        Prikaži copyright i oznaku proizvođača u navigaciji i na prijavi
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Prikazuje diskretnu traku sa logotipom i copyright potpisom u dnu bočne trake i na login stranici.
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showVendorBadge"
+                      checked={form.show_vendor_badge ?? true}
+                      onCheckedChange={(checked) => handleChange("show_vendor_badge", !!checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showVendorPdf" className="text-sm font-medium cursor-pointer">
+                        Uključi oznaku softvera i proizvođača na PDF reversima
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Dodaje copyright napomenu u fusnotu generisanih PDF reversa i reversnih slipova.
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showVendorPdf"
+                      checked={form.show_vendor_on_pdf ?? true}
+                      onCheckedChange={(checked) => handleChange("show_vendor_on_pdf", !!checked)}
+                    />
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="mt-4 p-4 rounded-xl border border-sky-500/20 bg-sky-500/5 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Pregled Uživo (Kako izgleda u sistemu)
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-lg bg-card border shadow-xs text-xs">
+                    <div className="flex items-center gap-2.5">
+                      {form.vendor_logo_url ? (
+                        <img
+                          src={form.vendor_logo_url}
+                          alt={form.vendor_name || "Vendor"}
+                          className="h-5 w-auto max-w-20 object-contain rounded"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-sky-500/15 text-sky-600 flex items-center justify-center font-bold text-[10px]">
+                          {form.vendor_name?.[0] || "I"}
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-semibold text-foreground">{form.vendor_name || "Introod3r"}</span>
+                        <span className="text-muted-foreground ml-2">{form.app_version_label || "v2.6"}</span>
+                      </div>
+                    </div>
+                    <div className="text-muted-foreground font-mono text-[11px] truncate">
+                      {form.copyright_text || "© 2026 Introod3r. Sva prava zadržana."}
+                    </div>
+                    {form.vendor_url && (
+                      <a
+                        href={form.vendor_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1 text-[11px] font-medium shrink-0"
+                      >
+                        Web sajt <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 </div>
               </CardContent>

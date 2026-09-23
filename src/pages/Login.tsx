@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PackageSearch, Loader2, Eye, EyeOff } from 'lucide-react';
+import { useCompanySettings } from '@/features/company/use-company-settings';
 
 export default function Login() {
+  const { settings } = useCompanySettings();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,14 +63,25 @@ export default function Login() {
     }
   };
 
+  const companyTitle = settings.short_name || settings.name || "EventAsset";
+  const copyright = settings.copyright_text || `© ${new Date().getFullYear()} ${settings.vendor_name || 'EventAsset'}`;
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-linear-to-br from-primary/10 via-background to-accent/30 border-r">
-        <div className="flex items-center gap-2 font-semibold text-lg">
-          <span className="grid place-items-center w-9 h-9 rounded-lg bg-primary text-primary-foreground">
-            <PackageSearch className="w-5 h-5" />
-          </span>
-          EventAsset
+        <div className="flex items-center gap-2.5 font-semibold text-lg">
+          {settings.logo_url ? (
+            <img
+              src={settings.logo_url}
+              alt={companyTitle}
+              className="h-9 w-auto max-w-24 object-contain rounded-md"
+            />
+          ) : (
+            <span className="grid place-items-center w-9 h-9 rounded-lg bg-primary text-primary-foreground">
+              <PackageSearch className="w-5 h-5" />
+            </span>
+          )}
+          <span>{companyTitle}</span>
         </div>
         <div className="space-y-4 max-w-md">
           <h1 className="text-3xl font-bold tracking-tight">Upravljaj opremom kao profesionalac.</h1>
@@ -79,7 +92,16 @@ export default function Login() {
             <li>• Offline skeniranje uz kasniju sinhronizaciju</li>
           </ul>
         </div>
-        <p className="text-xs text-muted-foreground">© EventAsset</p>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {settings.vendor_logo_url && (
+            <img
+              src={settings.vendor_logo_url}
+              alt={settings.vendor_name || "Vendor"}
+              className="h-4 w-auto max-w-16 object-contain"
+            />
+          )}
+          <span>{copyright}</span>
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6">
@@ -184,6 +206,39 @@ export default function Login() {
             </div>
           </div>
         </div>
+
+        {settings.show_vendor_badge && (
+          <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              {settings.vendor_logo_url && (
+                <img
+                  src={settings.vendor_logo_url}
+                  alt={settings.vendor_name || "Vendor"}
+                  className="h-4 w-auto max-w-20 object-contain rounded"
+                />
+              )}
+              <span className="font-medium text-foreground/80">{settings.vendor_name || "Introod3r"}</span>
+              {settings.app_version_label && (
+                <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-muted">
+                  {settings.app_version_label}
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-muted-foreground/70">
+              {copyright}
+            </div>
+            {settings.vendor_url && (
+              <a
+                href={settings.vendor_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-primary/80 hover:text-primary hover:underline mt-0.5"
+              >
+                {settings.vendor_url.replace(/^https?:\/\//, '')}
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

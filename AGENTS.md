@@ -144,9 +144,15 @@ Statusi definisani u `src/lib/status.ts`:
   - **Logotip i vizuelni brending:** Upload slike logotipa (PNG, SVG, JPG) sa brisanjem i pregledom; izbor primarne akcentne boje sistema (Sky Blue, Emerald, Indigo, Violet, Amber, Crimson, Cyan ili proizvoljni HEX kod).
   - **PDF Revers i zaduživanja:** Zvanični naslov dokumenta, pravna klauzula / izjava o materijalnoj odgovornosti preuzimaoca opreme (štampa se iznad potpisa), prefiks broja reversa, podrazumevani rok povrata, opcija prikaza nabavne vrednosti opreme.
   - **Šifarnik i inventar:** Prefiks automatskih šifara opreme (`EQ-`, `AST-`), valuta sistema (`RSD`, `EUR`, `USD`, `CHF`, `BAM`), godišnja stopa amortizacije (%) i tekst na QR nalepnicama.
+  - **Podaci o proizvođaču softvera i autorska prava (Vendor & Copyright):**
+    - Tab *„Proizvođač & Copyright”* u administratorskim podešavanjima (`/settings/company`).
+    - Unos naziva proizvođača/autora (`vendor_name`), zvaničnog web sajta (`vendor_url`), emaila i telefona za tehničku podršku, oznake verzije sistema (`app_version_label`) i copyright teksta (`copyright_text`).
+    - Upload i URL unos amblema/logotipa proizvođača softvera (`vendor_logo_url`) sa instant brisanjem i pregledom.
+    - Kontrola vidljivosti: prekidači za prikaz u podnožju bočne trake, na ekranu za prijavu (`show_vendor_badge`) i diskretne copyright fusnote na PDF reversima (`show_vendor_on_pdf`).
   - **Globalna integracija:**
-    - `AppShell.tsx`: Prikaz logotipa i brend naziva u zaglavlju i bočnoj traci.
-    - `revers-pdf.ts`: Automatski memorandum sa podacima firme, pravnom klauzulom i logotipom.
+    - `AppShell.tsx`: Prikaz logotipa i brend naziva u zaglavlju, plus diskretna traka proizvođača i copyright potpis na dnu desktop navigacije i mobilne fioke.
+    - `Login.tsx`: Prikaz brenda kompanije, logotipa proizvođača i copyright teksta u podnožju.
+    - `revers-pdf.ts`: Automatski memorandum sa podacima firme, pravnom klauzulom, logotipom i opcionalnom fusnotom proizvođača.
     - `PrintQrDialog.tsx`: Preuzimanje brend imena za štampu QR nalepnica.
     - `InventoryPrintReport.tsx`: Zvanično zaglavlje firme na Zapisniku o popisu.
   - **Baza podataka:** Tabela `company_settings` sa RLS politikom (`SELECT` dozvoljen ulogovanima, `INSERT`/`UPDATE` samo administratorima).

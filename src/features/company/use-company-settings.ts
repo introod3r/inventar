@@ -33,6 +33,16 @@ export type CompanySettings = {
   thermal_connection_mode?: "browser" | "serial" | "bluetooth";
   thermal_autocut?: boolean;
   thermal_darkness?: number;
+  // Vendor / Manufacturer / Developer & Copyright Branding
+  vendor_name?: string;
+  vendor_logo_url?: string | null;
+  vendor_url?: string;
+  vendor_support_email?: string;
+  vendor_support_phone?: string;
+  copyright_text?: string;
+  app_version_label?: string;
+  show_vendor_badge?: boolean;
+  show_vendor_on_pdf?: boolean;
   updated_at?: string;
 };
 
@@ -68,6 +78,16 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   thermal_connection_mode: "browser",
   thermal_autocut: true,
   thermal_darkness: 10,
+  // Proizvođač aplikacije i autorska prava
+  vendor_name: "Introod3r",
+  vendor_logo_url: null,
+  vendor_url: "https://introod3r.com",
+  vendor_support_email: "support@introod3r.com",
+  vendor_support_phone: "+381 11 123 4567",
+  copyright_text: "© 2026 Introod3r. Sva prava zadržana.",
+  app_version_label: "Inventar Enterprise v2.6",
+  show_vendor_badge: true,
+  show_vendor_on_pdf: true,
 };
 
 const STORAGE_KEY = "eventasset.company-settings";
@@ -166,11 +186,11 @@ export function useCompanySettings() {
     },
   });
 
-  // Helper for logo upload
+  // Helper for logo / vendor logo upload
   const uploadLogoMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, prefix = "logo" }: { file: File; prefix?: string }) => {
       const ext = file.name.split(".").pop() || "png";
-      const path = `logo-${Date.now()}.${ext}`;
+      const path = `${prefix}-${Date.now()}.${ext}`;
 
       // Upload to public storage bucket
       const { error: uploadErr } = await supabase.storage
@@ -205,7 +225,8 @@ export function useCompanySettings() {
     isLoading: query.isLoading,
     updateSettings: updateMutation.mutate,
     isUpdating: updateMutation.isPending,
-    uploadLogo: uploadLogoMutation.mutateAsync,
+    uploadLogo: (file: File, prefix: string = "logo") =>
+      uploadLogoMutation.mutateAsync({ file, prefix }),
     isUploadingLogo: uploadLogoMutation.isPending,
   };
 }
