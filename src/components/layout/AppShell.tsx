@@ -108,10 +108,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex bg-background overflow-x-hidden w-full">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 border-r bg-sidebar text-sidebar-foreground">
-        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-sidebar-border">
+    <div className="min-h-screen flex bg-background w-full">
+      {/* Desktop sidebar - Sticky viewport height so bottom toolbar is always visible */}
+      <aside className="hidden lg:flex flex-col w-64 border-r bg-sidebar text-sidebar-foreground sticky top-0 h-screen shrink-0 z-30">
+        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-sidebar-border shrink-0">
           {companySettings.logo_url ? (
             <img
               src={companySettings.logo_url}
@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
           <div className="ml-auto flex items-center gap-1"><ThemeToggle /><NotificationsBell /></div>
         </div>
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-3 shrink-0">
           <button
             onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
             className="w-full flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent transition"
@@ -138,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <kbd className="ml-auto text-[10px] font-mono opacity-70">⌘K</kbd>
           </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-h-0">
           <div className="px-3 py-2 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Dnevne Operacije
           </div>
@@ -180,12 +180,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           )}
         </nav>
-        <UserBlock />
-        <VendorCopyrightFooter />
+        <div className="shrink-0 mt-auto">
+          <UserBlock />
+          <VendorCopyrightFooter />
+        </div>
       </aside>
 
-      {/* Mobile top header */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         <header className="lg:hidden sticky top-0 z-40 h-14 flex items-center gap-3 px-4 border-b bg-background/80 backdrop-blur">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
