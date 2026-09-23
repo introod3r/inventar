@@ -23,7 +23,21 @@ import {
   Activity,
   Building2,
   Cpu,
+  Info,
+  Globe,
+  Mail,
+  Phone,
+  ExternalLink,
+  Award,
 } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useCompanySettings } from "@/features/company/use-company-settings";
@@ -79,6 +93,7 @@ const NAV_CATALOGS: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const { profile, user, signOut, hasPermission, roles } = useAuth();
   const { settings: companySettings } = useCompanySettings();
   const { items: cartItems } = useScanCart();
@@ -251,6 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
         <CommandPalette />
+        <AboutSystemDialog />
 
         {/* Mobile bottom nav - Sleek theme-aware dock */}
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-16 border-t border-border/80 bg-card/95 backdrop-blur text-muted-foreground shadow-lg dark:border-slate-800/80 dark:bg-slate-950 dark:text-slate-400 flex items-center justify-around px-1 pb-safe">
@@ -386,45 +402,156 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     const vendorName = companySettings.vendor_name || "Introod3r";
     const copyright = companySettings.copyright_text || `© ${new Date().getFullYear()} ${vendorName}`;
+    const version = companySettings.app_version_label || "v2.0";
 
     return (
-      <div className={`px-4 py-2 border-t border-sidebar-border/60 bg-sidebar/40 text-[11px] text-muted-foreground ${className}`}>
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0">
+      <div className={`p-2.5 border-t border-sidebar-border/60 bg-sidebar/30 select-none ${className}`}>
+        <button
+          type="button"
+          onClick={() => setAboutOpen(true)}
+          className="w-full text-left p-2 rounded-xl border border-sidebar-border/50 bg-card/60 hover:bg-card hover:border-primary/40 transition-all group shadow-2xs cursor-pointer block"
+        >
+          {/* Top row: Crisp Logo (32x32px) + Vendor Name + Info Icon */}
+          <div className="flex items-center gap-2.5 min-w-0">
             {companySettings.vendor_logo_url ? (
-              <img
-                src={companySettings.vendor_logo_url}
-                alt={vendorName}
-                className="h-3.5 w-auto max-w-16 object-contain rounded shrink-0"
-              />
+              <div className="w-8 h-8 rounded-lg bg-card border border-border/80 p-0.5 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:scale-105 transition-transform">
+                <img
+                  src={companySettings.vendor_logo_url}
+                  alt={vendorName}
+                  className="w-full h-full object-contain"
+                />
+              </div>
             ) : (
-              <span className="w-3.5 h-3.5 rounded bg-sky-500/15 text-sky-500 font-bold flex items-center justify-center text-[8px] shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                 {vendorName[0] || "I"}
-              </span>
+              </div>
             )}
-            <span className="truncate font-medium text-foreground/85 text-[11px]">{vendorName}</span>
-            {companySettings.app_version_label && (
-              <span className="text-[9px] px-1 py-0.2 rounded bg-muted/80 text-muted-foreground shrink-0 font-mono">
-                {companySettings.app_version_label}
-              </span>
-            )}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors truncate">
+                  {vendorName}
+                </span>
+                <Info className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="inline-flex items-center text-[10px] font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.2 rounded border border-border/40 truncate">
+                  {version}
+                </span>
+              </div>
+            </div>
           </div>
-          {companySettings.vendor_url && (
-            <a
-              href={companySettings.vendor_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary hover:underline shrink-0 text-[10px]"
-              title={`Web sajt proizvođača: ${vendorName}`}
-            >
-              Web
-            </a>
-          )}
-        </div>
-        <div className="mt-0.5 text-[10px] text-muted-foreground/70 truncate">
-          {copyright}
-        </div>
+
+          {/* Bottom row: Clean copyright & Action cue */}
+          <div className="mt-2 pt-1.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground/70">
+            <span className="truncate">{copyright}</span>
+            <span className="text-[10px] text-primary/80 group-hover:underline font-medium shrink-0 ml-1">
+              O sistemu
+            </span>
+          </div>
+        </button>
       </div>
+    );
+  }
+
+  function AboutSystemDialog() {
+    const vendorName = companySettings.vendor_name || "Introod3r";
+    const version = companySettings.app_version_label || "v2.0";
+
+    return (
+      <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
+        <DialogContent className="max-w-md p-6">
+          <DialogHeader className="text-center sm:text-center items-center pb-2">
+            <div className="w-16 h-16 rounded-2xl bg-card border-2 border-border/80 p-2 flex items-center justify-center overflow-hidden shadow-md mx-auto mb-3">
+              {companySettings.vendor_logo_url ? (
+                <img
+                  src={companySettings.vendor_logo_url}
+                  alt={vendorName}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Award className="w-8 h-8 text-primary" />
+              )}
+            </div>
+            <DialogTitle className="text-xl font-bold">
+              {vendorName}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
+              Razvoj i implementacija poslovnog softvera za praćenje i upravljanje opremom
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <div className="p-3 rounded-xl bg-muted/30 border border-border/50 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Sistem & Verzija:</span>
+                <span className="font-mono font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                  {version}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Arhitektura:</span>
+                <span className="font-medium text-foreground">React 19 • Vite • PWA • Supabase</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Režim rada:</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Online & Offline PWA Sinhronizacija
+                </span>
+              </div>
+            </div>
+
+            {/* Support and Links */}
+            {(companySettings.vendor_url || companySettings.vendor_support_email || companySettings.vendor_support_phone) && (
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Tehnička Podrška & Kontakt
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {companySettings.vendor_url && (
+                    <a
+                      href={companySettings.vendor_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 p-2.5 rounded-lg border bg-card hover:bg-accent/40 hover:border-primary/40 transition-colors"
+                    >
+                      <Globe className="w-4 h-4 text-sky-500 shrink-0" />
+                      <div className="min-w-0 flex-1 truncate font-medium">Zvanični sajt</div>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
+                    </a>
+                  )}
+                  {companySettings.vendor_support_email && (
+                    <a
+                      href={`mailto:${companySettings.vendor_support_email}`}
+                      className="flex items-center gap-2 p-2.5 rounded-lg border bg-card hover:bg-accent/40 hover:border-primary/40 transition-colors"
+                    >
+                      <Mail className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div className="min-w-0 flex-1 truncate font-medium">Email podrška</div>
+                    </a>
+                  )}
+                  {companySettings.vendor_support_phone && (
+                    <a
+                      href={`tel:${companySettings.vendor_support_phone}`}
+                      className="flex items-center gap-2 p-2.5 rounded-lg border bg-card hover:bg-accent/40 hover:border-primary/40 transition-colors sm:col-span-2"
+                    >
+                      <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <div className="min-w-0 flex-1 truncate font-medium">
+                        Telefon: {companySettings.vendor_support_phone}
+                      </div>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Copyright note */}
+            <div className="pt-2 border-t text-center text-xs text-muted-foreground/80 leading-relaxed">
+              {companySettings.copyright_text || `© ${new Date().getFullYear()} ${vendorName}. Sva prava zadržana.`}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 }
